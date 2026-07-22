@@ -33,7 +33,7 @@ export function gameAccuracy(accuracies) {
 }
 
 export const TAGS = {
-  Best: { label: 'Best', color: '#7dc96b', symbol: '✓', kind: 'good' },
+  Best: { label: 'Best', color: '#7dc96b', symbol: '', kind: 'good' },
   Sharp: { label: 'Sharp', color: '#26c2a3', symbol: '!!', kind: 'good' },
   Solid: { label: 'Solid', color: '#9bcf6b', symbol: '', kind: 'good' },
   Fine: { label: 'Fine', color: '#b7b7b7', symbol: '', kind: 'ok' },
