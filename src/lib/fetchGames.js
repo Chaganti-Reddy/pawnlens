@@ -2,7 +2,6 @@
 // chess.com: https://www.chess.com/news/view/published-data-api
 // lichess:   https://lichess.org/api
 
-// Split a possibly-multi-game PGN blob into individual game strings.
 export function splitPgns(text) {
   const trimmed = (text || '').trim();
   if (!trimmed) return [];
@@ -15,19 +14,13 @@ function tagOf(pgn, name) {
   return m ? m[1] : '';
 }
 
-// Turn a chess.com ECO url slug into a readable opening name.
 function openingFromEcoUrl(url) {
   if (!url) return '';
   const slug = url.split('/openings/')[1];
   if (!slug) return '';
-  return decodeURIComponent(slug)
-    .replace(/-/g, ' ')
-    .replace(/\.{3}.*$/, '')
-    .replace(/\s+\d.*$/, '')
-    .trim();
+  return decodeURIComponent(slug).replace(/-/g, ' ').replace(/\.{3}.*$/, '').replace(/\s+\d.*$/, '').trim();
 }
 
-// Light metadata from a PGN's header tags.
 export function pgnMeta(pgn) {
   const opening = tagOf(pgn, 'Opening') || openingFromEcoUrl(tagOf(pgn, 'ECOUrl'));
   return {
@@ -47,7 +40,6 @@ export function pgnMeta(pgn) {
   };
 }
 
-// Given a game and the searched user, tag which side they played + their result.
 function withUserView(game, user) {
   const u = (user || '').toLowerCase();
   let userColor = null;
@@ -62,24 +54,35 @@ function withUserView(game, user) {
   return { ...game, userColor, userResult };
 }
 
-async function getJson(url) {
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!res.ok) throw new Error(`Request failed (${res.status}) for ${url}`);
+// Fetch JSON with human-friendly errors keyed to the platform + username.
+async function getJson(url, ctx) {
+  let res;
+  try {
+    res = await fetch(url, { headers: { Accept: 'application/json' } });
+  } catch {
+    throw new Error("Can't reach the network. Check your connection and try again.");
+  }
+  if (res.status === 404) throw new Error(ctx.notFound);
+  if (res.status === 429) throw new Error('Too many requests right now — wait a moment and try again.');
+  if (res.status >= 500) throw new Error(`${ctx.site} is having trouble right now. Try again shortly.`);
+  if (!res.ok) throw new Error(`${ctx.site} request failed (${res.status}).`);
   return res.json();
 }
 
-// chess.com — most recent `count` games for a username.
-export async function fetchChessComGames(username, count = 12) {
+export async function fetchChessComGames(username, count = 20) {
   const user = username.trim().toLowerCase();
-  if (!user) throw new Error('Enter a chess.com username.');
-  const arch = await getJson(`https://api.chess.com/pub/player/${user}/games/archives`);
+  if (!user) throw new Error('Type a chess.com username first.');
+  const ctx = {
+    site: 'chess.com',
+    notFound: `No chess.com player called "${username.trim()}". Check the spelling.`,
+  };
+  const arch = await getJson(`https://api.chess.com/pub/player/${user}/games/archives`, ctx);
   const urls = arch.archives || [];
-  if (!urls.length) throw new Error('No games found for that chess.com user.');
+  if (!urls.length) throw new Error(`"${username.trim()}" has no public games on chess.com yet.`);
   const games = [];
   for (let i = urls.length - 1; i >= 0 && games.length < count; i--) {
-    const month = await getJson(urls[i]);
-    const monthGames = (month.games || []).reverse();
-    for (const g of monthGames) {
+    const month = await getJson(urls[i], ctx);
+    for (const g of (month.games || []).reverse()) {
       if (!g.pgn) continue;
       const base = {
         ...pgnMeta(g.pgn),
@@ -97,24 +100,29 @@ export async function fetchChessComGames(username, count = 12) {
       if (games.length >= count) break;
     }
   }
+  if (!games.length) throw new Error(`Couldn't find recent games for "${username.trim()}".`);
   return games;
 }
 
-// lichess — most recent `count` games for a username.
-export async function fetchLichessGames(username, count = 12) {
+export async function fetchLichessGames(username, count = 20) {
   const user = username.trim();
-  if (!user) throw new Error('Enter a lichess username.');
+  if (!user) throw new Error('Type a lichess username first.');
   const url = `https://lichess.org/api/games/user/${encodeURIComponent(user)}?max=${count}&opening=true&clocks=false&evals=false`;
-  const res = await fetch(url, { headers: { Accept: 'application/x-chess-pgn' } });
+  let res;
+  try {
+    res = await fetch(url, { headers: { Accept: 'application/x-chess-pgn' } });
+  } catch {
+    throw new Error("Can't reach lichess. Check your connection and try again.");
+  }
+  if (res.status === 404) throw new Error(`No lichess player called "${user}". Check the spelling.`);
+  if (res.status === 429) throw new Error('lichess is rate-limiting — wait a moment and try again.');
   if (!res.ok) throw new Error(`lichess request failed (${res.status}).`);
   const text = await res.text();
-  return splitPgns(text).map((pgn) => {
-    const base = { ...pgnMeta(pgn), timeClass: guessLichessTimeClass(pgn), source: 'lichess' };
-    return withUserView(base, user);
-  });
+  const list = splitPgns(text);
+  if (!list.length) throw new Error(`"${user}" has no public games on lichess yet.`);
+  return list.map((pgn) => withUserView({ ...pgnMeta(pgn), timeClass: guessLichessTimeClass(pgn), source: 'lichess' }, user));
 }
 
-// lichess PGN Event tag usually reads e.g. "Rated Blitz game".
 function guessLichessTimeClass(pgn) {
   const ev = tagOf(pgn, 'Event').toLowerCase();
   if (ev.includes('bullet')) return 'bullet';
