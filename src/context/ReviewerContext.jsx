@@ -5,6 +5,7 @@ import { analyzeGame } from '../lib/analyze.js';
 import { fetchChessComGames, fetchLichessGames, splitPgns, pgnMeta } from '../lib/fetchGames.js';
 import { summarize, addToHistory, loadHistory } from '../lib/storage.js';
 import { addRecent } from '../lib/recents.js';
+import i18n from '../i18n.js';
 
 const Ctx = createContext(null);
 export const useReviewer = () => useContext(Ctx);
@@ -63,7 +64,7 @@ export function ReviewerProvider({ children }) {
   const loadPgnText = useCallback((text) => {
     setError('');
     const list = splitPgns(text).map((p) => ({ ...pgnMeta(p), source: 'pgn' }));
-    if (!list.length) { setError('Paste a valid PGN first.'); return; }
+    if (!list.length) { setError(i18n.t('home.errorPgn')); return; }
     setGames(list);
     setLastQuery('');
     setSource('pgn');

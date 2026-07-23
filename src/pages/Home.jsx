@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useReviewer } from '../context/ReviewerContext.jsx';
 import { getRecents, addRecent, removeRecent } from '../lib/recents.js';
 import GameCard from '../components/GameCard.jsx';
 import { SourceMark } from '../components/icons.jsx';
 import { FaXmark, FaMagnifyingGlass } from '../ui/icons.js';
 
-const DEPTHS = [{ label: 'Fast', value: 8 }, { label: 'Balanced', value: 12 }, { label: 'Deep', value: 16 }];
+const DEPTHS = [{ key: 'depthFast', value: 8 }, { key: 'depthBalanced', value: 12 }, { key: 'depthDeep', value: 16 }];
 const COUNTS = [10, 25, 50, 100];
 const SOURCE_LABEL = { chesscom: 'chess.com', lichess: 'lichess' };
 
 export default function Home() {
+  const { t } = useTranslation();
   const { fetchGames, loadPgnText, games, lastQuery, busy, error, runAnalysis, runBatch, depth, setDepth, source } = useReviewer();
   const [tab, setTab] = useState('chesscom');
   const [username, setUsername] = useState('');
@@ -32,28 +34,28 @@ export default function Home() {
   return (
     <main className="input-view">
       <div className="tabs">
-        {['chesscom', 'lichess', 'pgn'].map((t) => (
-          <button key={t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>
-            {t !== 'pgn' ? <SourceMark source={SOURCE_LABEL[t]} /> : null}
-            {t === 'chesscom' ? 'chess.com' : t === 'lichess' ? 'lichess' : 'Paste PGN'}
+        {['chesscom', 'lichess', 'pgn'].map((tb) => (
+          <button key={tb} className={tab === tb ? 'on' : ''} onClick={() => setTab(tb)}>
+            {tb !== 'pgn' ? <SourceMark source={SOURCE_LABEL[tb]} /> : null}
+            {tb === 'chesscom' ? t('home.tabChesscom') : tb === 'lichess' ? t('home.tabLichess') : t('home.tabPgn')}
           </button>
         ))}
       </div>
 
       <div className="input-row">
         {tab === 'pgn' ? (
-          <textarea className="pgn-input" placeholder="Paste one or more PGNs here…" value={pgnText} onChange={(e) => setPgnText(e.target.value)} />
+          <textarea className="pgn-input" placeholder={t('home.pgnPlaceholder')} value={pgnText} onChange={(e) => setPgnText(e.target.value)} />
         ) : (
-          <input className="user-input" placeholder={`${SOURCE_LABEL[tab]} username`} value={username}
+          <input className="user-input" placeholder={t('home.usernamePlaceholder', { site: SOURCE_LABEL[tab] })} value={username}
             onChange={(e) => setUsername(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} autoFocus />
         )}
         {tab !== 'pgn' && (
-          <select className="count-pick" value={count} onChange={(e) => setCount(Number(e.target.value))} title="How many recent games">
-            {COUNTS.map((c) => <option key={c} value={c}>{c} games</option>)}
+          <select className="count-pick" value={count} onChange={(e) => setCount(Number(e.target.value))} title={t('home.howManyGames')}>
+            {COUNTS.map((c) => <option key={c} value={c}>{t('home.countGames', { count: c })}</option>)}
           </select>
         )}
         <button className="primary" onClick={() => submit()} disabled={busy}>
-          <FaMagnifyingGlass /> {busy ? 'Loading…' : tab === 'pgn' ? 'Load PGN' : 'Get games'}
+          <FaMagnifyingGlass /> {busy ? t('home.loading') : tab === 'pgn' ? t('home.loadPgn') : t('home.getGames')}
         </button>
       </div>
 
@@ -61,11 +63,11 @@ export default function Home() {
 
       {tab !== 'pgn' && recents.length > 0 && (
         <div className="recents">
-          <span className="recents-label">Recent:</span>
+          <span className="recents-label">{t('home.recent')}</span>
           {recents.map((n) => (
             <span className="pill" key={n}>
               <button className="pill-main" onClick={() => submit(n)}>{n}</button>
-              <button className="pill-x" onClick={() => setRecents(removeRecent(tab, n))} title="Remove"><FaXmark /></button>
+              <button className="pill-x" onClick={() => setRecents(removeRecent(tab, n))} title={t('home.remove')}><FaXmark /></button>
             </span>
           ))}
         </div>
@@ -75,8 +77,8 @@ export default function Home() {
         <>
           {lastQuery && (
             <div className="batch-bar">
-              <span>{games.length} games loaded for <b>{lastQuery}</b></span>
-              <button className="primary sm" onClick={runBatch}>Analyze all → find my weaknesses</button>
+              <span>{t('home.gamesLoaded', { count: games.length })} <b>{lastQuery}</b></span>
+              <button className="primary sm" onClick={runBatch}>{t('home.analyzeAll')}</button>
             </div>
           )}
           <div className="picker">
@@ -86,10 +88,10 @@ export default function Home() {
       )}
 
       <div className="depth-row">
-        <span className="depth-label">Engine depth</span>
+        <span className="depth-label">{t('home.engineDepth')}</span>
         <div className="depth-pick">
           {DEPTHS.map((d) => (
-            <button key={d.value} className={depth === d.value ? 'on' : ''} onClick={() => setDepth(d.value)}>{d.label}</button>
+            <button key={d.value} className={depth === d.value ? 'on' : ''} onClick={() => setDepth(d.value)}>{t(`home.${d.key}`)}</button>
           ))}
         </div>
       </div>

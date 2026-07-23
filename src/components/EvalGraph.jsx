@@ -1,4 +1,6 @@
 // Whole-game evaluation graph (White win% over time). Click to jump to a move.
+import { useTranslation } from 'react-i18next';
+
 function winFromEval(ev) {
   if (ev?.mate != null) return ev.mate > 0 ? 100 : 0;
   const cp = ev?.cp ?? 0;
@@ -9,6 +11,7 @@ const W = 100;
 const H = 40;
 
 export default function EvalGraph({ series, selectedPly, onSelect }) {
+  const { t } = useTranslation();
   if (!series?.length) return null;
   const n = series.length - 1; // number of moves
   const x = (i) => (n === 0 ? 0 : (i / n) * W);
@@ -26,7 +29,7 @@ export default function EvalGraph({ series, selectedPly, onSelect }) {
   };
 
   return (
-    <div className="eval-graph" onClick={handleClick} title="Click to jump to a move">
+    <div className="eval-graph" onClick={handleClick} title={t('review.evalGraphHint')}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
         <rect x="0" y="0" width={W} height={H} fill="#20201d" />
         <line x1="0" y1={H / 2} x2={W} y2={H / 2} stroke="#4a473f" strokeWidth="0.4" strokeDasharray="1 1" />

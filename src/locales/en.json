@@ -1,0 +1,150 @@
+{
+  "brand": {
+    "name": "PawnLens",
+    "tagline": "free unlimited game review"
+  },
+  "nav": {
+    "newReview": "New review",
+    "review": "Review",
+    "weaknesses": "My weaknesses",
+    "engineReady": "Engine ready",
+    "engineLoading": "Loading engine…"
+  },
+  "home": {
+    "tabChesscom": "chess.com",
+    "tabLichess": "lichess",
+    "tabPgn": "Paste PGN",
+    "usernamePlaceholder": "{{site}} username",
+    "pgnPlaceholder": "Paste one or more PGNs here…",
+    "countGames": "{{count}} games",
+    "getGames": "Get games",
+    "loadPgn": "Load PGN",
+    "loading": "Loading…",
+    "recent": "Recent:",
+    "remove": "Remove",
+    "gamesLoaded": "{{count}} games loaded for",
+    "analyzeAll": "Analyze all → find my weaknesses",
+    "engineDepth": "Engine depth",
+    "depthFast": "Fast",
+    "depthBalanced": "Balanced",
+    "depthDeep": "Deep",
+    "howManyGames": "How many recent games",
+    "errorPgn": "Paste a valid PGN first."
+  },
+  "gamecard": {
+    "review": "Review"
+  },
+  "review": {
+    "back": "Back to games",
+    "vs": "vs",
+    "analyzing": "Analyzing… {{pct}}%",
+    "loadingEngine": "Loading engine…",
+    "analyzeFromSide": "Analyze from {{side}}'s side",
+    "sideWhite": "White",
+    "sideBlack": "Black",
+    "bestLine": "Best line:",
+    "strongPlayers": "How strong players handle this",
+    "mastersIntro": "Master games from this exact position:",
+    "enginePlanIntro": "Past the opening book here — so here's the engine's plan:",
+    "yourMove": "your move",
+    "lookingUp": "Looking it up…",
+    "navStart": "Start (Home)",
+    "navPrev": "Prev (←)",
+    "navNext": "Next (→)",
+    "navEnd": "End (End)",
+    "evalGraphHint": "Click to jump to a move"
+  },
+  "weakness": {
+    "yourUsername": "Your username",
+    "clear": "Clear ({{count}})",
+    "clearTitle": "Delete all locally-stored games",
+    "analyzingGame": "Analyzing game {{i}} of {{n}}… {{pct}}%",
+    "empty1": "No saved games for {{name}} yet.",
+    "emptyNoName": "this player",
+    "empty2": "Analyze a few games (they save to your browser) to unlock your weakness report.",
+    "recurring": "Your recurring mistakes",
+    "statGames": "Games",
+    "statAccuracy": "Avg accuracy",
+    "statMistakes": "Mistakes / game",
+    "statPhase": "Weakest phase",
+    "eg": "e.g."
+  },
+  "errors": {
+    "network": "Can't reach the network. Check your connection and try again.",
+    "networkLichess": "Can't reach lichess. Check your connection and try again.",
+    "rateLimited": "Too many requests right now — wait a moment and try again.",
+    "rateLimitedLichess": "lichess is rate-limiting — wait a moment and try again.",
+    "serverTrouble": "{{site}} is having trouble right now. Try again shortly.",
+    "requestFailed": "{{site}} request failed ({{status}}).",
+    "typeUser": "Type a {{site}} username first.",
+    "notFound": "No {{site}} player called \"{{name}}\". Check the spelling.",
+    "noGames": "\"{{name}}\" has no public games on {{site}} yet.",
+    "noRecent": "Couldn't find recent games for \"{{name}}\"."
+  },
+  "footer": {
+    "attribution": "Analysis by Stockfish.js (GPLv3).",
+    "notAffiliated": "Not affiliated with chess.com or lichess.",
+    "source": "Source"
+  },
+  "phase": {
+    "opening": "Opening",
+    "middlegame": "Middlegame",
+    "endgame": "Endgame",
+    "none": "—"
+  },
+  "tag": {
+    "Best": "Best",
+    "Sharp": "Sharp",
+    "Solid": "Solid",
+    "Fine": "Fine",
+    "Loose": "Loose",
+    "Slip": "Slip",
+    "Drop": "Drop"
+  },
+  "category": {
+    "hung-piece": "Hanging pieces (dropping material)",
+    "allowed-mate": "Walking into forced mates",
+    "tactic-allowed": "Allowing tactics (forks, etc.)",
+    "bad-trade": "Trading into a worse position",
+    "missed-better-move": "Missing stronger moves",
+    "positional-drift": "Slow positional slips"
+  },
+  "piece": {
+    "p": "pawn",
+    "n": "knight",
+    "b": "bishop",
+    "r": "rook",
+    "q": "queen",
+    "k": "king"
+  },
+  "idea": {
+    "castle": "tucking your king away safely",
+    "check": "putting the king under pressure",
+    "capture": "picking up the {{piece}}",
+    "develop": "bringing a piece into the game",
+    "initiative": "and after {{move}} you keep the initiative",
+    "solid": "keeping your position solid"
+  },
+  "coach": {
+    "anotherMove": "another move",
+    "sharp": "Brave and correct — the sacrifice breaks through{{cont}}.",
+    "sharpCont": ", and {{move}} keeps it rolling",
+    "best": "Spot on — that's the best move, {{idea}}.",
+    "solid": "Good, solid choice — you gave up almost nothing.",
+    "fine": "Playable, though {{best}} had a touch more to offer.",
+    "mate": "Ouch — this walks into a forced mate. ",
+    "mateBackRank": "Careful — this walks into a back-rank mate. ",
+    "mateAfter": "After {{opp}} there's no escape (mate in {{n}}). ",
+    "mateSaved": "{{best}} was the way to stay alive.",
+    "forkKing": "This lets {{opp}} fork your king and {{piece}} — you'll drop material next move. ",
+    "forkTwo": "This runs into {{opp}}, forking two of your pieces. ",
+    "forkSaved": "{{best}} would've kept everything defended.",
+    "hung": "You left the {{piece}} loose — {{opp}} just takes it. ",
+    "hungSaved": "{{best}} kept it protected.",
+    "badTrade": "This trade actually helps your opponent — you come out worse. ",
+    "badTradeSaved": "{{best}} kept the tension in your favour.",
+    "missed": "{{best}} was stronger, {{idea}}. Your move hands a little back.",
+    "slip": "This slips a bit — there was something cleaner here.",
+    "cost": " (about {{pct}}% of your advantage)"
+  }
+}

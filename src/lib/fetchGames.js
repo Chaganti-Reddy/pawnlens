@@ -1,6 +1,9 @@
 // Fetch games from public, CORS-open APIs. No server, no API key, no scraping of paywalled data.
 // chess.com: https://www.chess.com/news/view/published-data-api
 // lichess:   https://lichess.org/api
+import i18n from '../i18n.js';
+
+const t = (k, o) => i18n.t(k, o);
 
 export function splitPgns(text) {
   const trimmed = (text || '').trim();
@@ -60,25 +63,23 @@ async function getJson(url, ctx) {
   try {
     res = await fetch(url, { headers: { Accept: 'application/json' } });
   } catch {
-    throw new Error("Can't reach the network. Check your connection and try again.");
+    throw new Error(t('errors.network'));
   }
   if (res.status === 404) throw new Error(ctx.notFound);
-  if (res.status === 429) throw new Error('Too many requests right now — wait a moment and try again.');
-  if (res.status >= 500) throw new Error(`${ctx.site} is having trouble right now. Try again shortly.`);
-  if (!res.ok) throw new Error(`${ctx.site} request failed (${res.status}).`);
+  if (res.status === 429) throw new Error(t('errors.rateLimited'));
+  if (res.status >= 500) throw new Error(t('errors.serverTrouble', { site: ctx.site }));
+  if (!res.ok) throw new Error(t('errors.requestFailed', { site: ctx.site, status: res.status }));
   return res.json();
 }
 
 export async function fetchChessComGames(username, count = 20) {
   const user = username.trim().toLowerCase();
-  if (!user) throw new Error('Type a chess.com username first.');
-  const ctx = {
-    site: 'chess.com',
-    notFound: `No chess.com player called "${username.trim()}". Check the spelling.`,
-  };
+  const site = 'chess.com';
+  if (!user) throw new Error(t('errors.typeUser', { site }));
+  const ctx = { site, notFound: t('errors.notFound', { site, name: username.trim() }) };
   const arch = await getJson(`https://api.chess.com/pub/player/${user}/games/archives`, ctx);
   const urls = arch.archives || [];
-  if (!urls.length) throw new Error(`"${username.trim()}" has no public games on chess.com yet.`);
+  if (!urls.length) throw new Error(t('errors.noGames', { site, name: username.trim() }));
   const games = [];
   for (let i = urls.length - 1; i >= 0 && games.length < count; i--) {
     const month = await getJson(urls[i], ctx);
@@ -100,26 +101,27 @@ export async function fetchChessComGames(username, count = 20) {
       if (games.length >= count) break;
     }
   }
-  if (!games.length) throw new Error(`Couldn't find recent games for "${username.trim()}".`);
+  if (!games.length) throw new Error(t('errors.noRecent', { name: username.trim() }));
   return games;
 }
 
 export async function fetchLichessGames(username, count = 20) {
   const user = username.trim();
-  if (!user) throw new Error('Type a lichess username first.');
+  const site = 'lichess';
+  if (!user) throw new Error(t('errors.typeUser', { site }));
   const url = `https://lichess.org/api/games/user/${encodeURIComponent(user)}?max=${count}&opening=true&clocks=false&evals=false`;
   let res;
   try {
     res = await fetch(url, { headers: { Accept: 'application/x-chess-pgn' } });
   } catch {
-    throw new Error("Can't reach lichess. Check your connection and try again.");
+    throw new Error(t('errors.networkLichess'));
   }
-  if (res.status === 404) throw new Error(`No lichess player called "${user}". Check the spelling.`);
-  if (res.status === 429) throw new Error('lichess is rate-limiting — wait a moment and try again.');
-  if (!res.ok) throw new Error(`lichess request failed (${res.status}).`);
+  if (res.status === 404) throw new Error(t('errors.notFound', { site, name: user }));
+  if (res.status === 429) throw new Error(t('errors.rateLimitedLichess'));
+  if (!res.ok) throw new Error(t('errors.requestFailed', { site, status: res.status }));
   const text = await res.text();
   const list = splitPgns(text);
-  if (!list.length) throw new Error(`"${user}" has no public games on lichess yet.`);
+  if (!list.length) throw new Error(t('errors.noGames', { site, name: user }));
   return list.map((pgn) => withUserView({ ...pgnMeta(pgn), timeClass: guessLichessTimeClass(pgn), source: 'lichess' }, user));
 }
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Chessboard } from 'react-chessboard';
 import { useReviewer } from '../context/ReviewerContext.jsx';
 import { TAGS } from '../lib/classify.js';
@@ -14,6 +15,7 @@ const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 export default function Review() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { analysis, focusColor, progress, engineStatus, selectedPly, setSelectedPly, runAnalysis } = useReviewer();
 
   const total = analysis?.moves.length ?? 0;
@@ -59,7 +61,7 @@ export default function Review() {
   return (
     <main className="review-view">
       <div className="board-col">
-        <button className="back-btn" onClick={() => navigate('/')}><FaArrowLeftLong /> Back to games</button>
+        <button className="back-btn" onClick={() => navigate('/')}><FaArrowLeftLong /> {t('review.back')}</button>
         {analysis && (
           <div className="game-head">
             <span className="gh-players">{analysis.game.white} vs {analysis.game.black}</span>
@@ -72,10 +74,10 @@ export default function Review() {
         </div>
         {analysis && <EvalGraph series={analysis.evalSeries} selectedPly={selectedPly} onSelect={go} />}
         <div className="nav">
-          <button onClick={() => go(-1)} title="Start (Home)"><FaAnglesLeft /></button>
-          <button onClick={() => go(selectedPly - 1)} title="Prev (←)"><FaAngleLeft /></button>
-          <button onClick={() => go(selectedPly + 1)} title="Next (→)"><FaAngleRight /></button>
-          <button onClick={() => go(total - 1)} title="End (End)"><FaAnglesRight /></button>
+          <button onClick={() => go(-1)} title={t('review.navStart')}><FaAnglesLeft /></button>
+          <button onClick={() => go(selectedPly - 1)} title={t('review.navPrev')}><FaAngleLeft /></button>
+          <button onClick={() => go(selectedPly + 1)} title={t('review.navNext')}><FaAngleRight /></button>
+          <button onClick={() => go(total - 1)} title={t('review.navEnd')}><FaAnglesRight /></button>
         </div>
       </div>
 
@@ -83,7 +85,7 @@ export default function Review() {
         {analyzing ? (
           <div className="loading">
             <div className="spinner" />
-            <p>{engineStatus === 'loading' ? 'Loading engine…' : `Analyzing… ${loadingPct}%`}</p>
+            <p>{engineStatus === 'loading' ? t('review.loadingEngine') : t('review.analyzing', { pct: loadingPct })}</p>
             <div className="progress"><div className="progress-fill" style={{ width: `${loadingPct}%` }} /></div>
           </div>
         ) : (
@@ -99,9 +101,9 @@ export default function Review() {
               </div>
             </div>
             <div className="tag-legend">
-              {Object.entries(analysis.counts[focusColor] || {}).map(([t, n]) => (
-                <span className="chip" key={t} style={{ borderColor: TAGS[t]?.color }}>
-                  <span className="chip-dot" style={{ background: TAGS[t]?.color }} />{TAGS[t]?.label} {n}
+              {Object.entries(analysis.counts[focusColor] || {}).map(([key, n]) => (
+                <span className="chip" key={key} style={{ borderColor: TAGS[key]?.color }}>
+                  <span className="chip-dot" style={{ background: TAGS[key]?.color }} />{t(`tag.${key}`)} {n}
                 </span>
               ))}
             </div>
@@ -110,7 +112,7 @@ export default function Review() {
             <MoveList moves={analysis.moves} selectedPly={selectedPly} onSelect={go} />
             <div className="re-analyze">
               <button onClick={() => runAnalysis(analysis.game, focusColor === 'w' ? 'b' : 'w')}>
-                Analyze from {focusColor === 'w' ? 'Black' : 'White'}'s side
+                {t('review.analyzeFromSide', { side: focusColor === 'w' ? t('review.sideBlack') : t('review.sideWhite') })}
               </button>
             </div>
           </>

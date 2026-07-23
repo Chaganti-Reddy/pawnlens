@@ -59,15 +59,6 @@ export function clearHistory() {
   saveHistory([]);
 }
 
-const CATEGORY_LABEL = {
-  'hung-piece': 'Hanging pieces (dropping material)',
-  'allowed-mate': 'Walking into forced mates',
-  'tactic-allowed': 'Allowing tactics (forks, etc.)',
-  'bad-trade': 'Trading into a worse position',
-  'missed-better-move': 'Missing stronger moves',
-  'positional-drift': 'Slow positional slips',
-};
-
 // Aggregate weaknesses across all stored games for a given player name.
 export function aggregateWeaknesses(playerName) {
   const games = loadHistory().filter(
@@ -96,7 +87,6 @@ export function aggregateWeaknesses(playerName) {
     .sort((a, b) => b[1] - a[1])
     .map(([cat, count]) => ({
       cat,
-      label: CATEGORY_LABEL[cat] || cat,
       count,
       pct: Math.round((count / totalBad) * 100),
       example: examples[cat],

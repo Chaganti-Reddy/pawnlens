@@ -1,5 +1,8 @@
+import { useTranslation } from 'react-i18next';
+
 // Paired move list with classification chips. Click a move to jump to it.
 export default function MoveList({ moves, selectedPly, onSelect }) {
+  const { t } = useTranslation();
   const rows = [];
   for (let i = 0; i < moves.length; i += 2) {
     rows.push({ num: Math.floor(i / 2) + 1, white: moves[i], black: moves[i + 1] });
@@ -12,7 +15,7 @@ export default function MoveList({ moves, selectedPly, onSelect }) {
       <button
         className={`mv ${sel ? 'sel' : ''} ${mv.tagKind}`}
         onClick={() => onSelect(mv.ply)}
-        title={`${mv.tagLabel}${mv.tagSymbol ? ' ' + mv.tagSymbol : ''}`}
+        title={`${t(`tag.${mv.tag}`)}${mv.tagSymbol ? ' ' + mv.tagSymbol : ''}`}
       >
         <span className="mv-san">{mv.san}</span>
         {mv.tagSymbol && (

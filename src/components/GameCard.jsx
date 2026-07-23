@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import Avatar from './Avatar.jsx';
 import { TimeIcon, ResultBadge, SourceMark } from './icons.jsx';
 import { FaAngleRight } from '../ui/icons.js';
 
 // One fetched game, shown visually. `focusName` is the searched user (their side highlighted).
 export default function GameCard({ game, focusName, onReview }) {
+  const { t } = useTranslation();
   const focus = (focusName || '').toLowerCase();
   const whiteIsFocus = game.white.toLowerCase() === focus;
   const blackIsFocus = game.black.toLowerCase() === focus;
@@ -30,7 +32,7 @@ export default function GameCard({ game, focusName, onReview }) {
       <div className="gc-right">
         {game.userResult && <ResultBadge result={game.userResult} />}
         {game.opening && <span className="gc-opening" title={game.opening}>{game.opening}</span>}
-        <span className="gc-review">Review <FaAngleRight /></span>
+        <span className="gc-review">{t('gamecard.review')} <FaAngleRight /></span>
       </div>
     </div>
   );

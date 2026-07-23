@@ -1,8 +1,10 @@
 // Turn engine numbers + board facts into plain-English notes that read like a
-// friendly coach — not an engine dump. No LLM, no cost: all rule-based templates.
+// friendly coach. No LLM — rule-based templates, all copy from the translation file.
 import { Chess } from 'chess.js';
+import i18n from '../i18n.js';
 
-const PIECE_NAME = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' };
+const t = (k, o) => i18n.t(k, o);
+const pieceName = (type) => t(`piece.${type}`);
 const PIECE_VALUE = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
 
 function playMove(fen, uci) {
@@ -16,19 +18,17 @@ function playMove(fen, uci) {
   }
 }
 
-// A short phrase for the idea behind the best move.
 function ideaBehind(best, bestLine) {
-  if (!best) return '';
-  if (best.san.startsWith('O-O')) return 'tucking your king away safely';
-  if (best.san.includes('+')) return 'putting the king under pressure';
-  if (best.captured) return `picking up the ${PIECE_NAME[best.captured]}`;
-  if ((best.piece === 'n' || best.piece === 'b') && /[a-h][12]/.test(best.to) === false && best.san[0] === best.san[0].toUpperCase())
-    return 'bringing a piece into the game';
-  if (bestLine?.length >= 2) return `and after ${bestLine[1]} you keep the initiative`;
-  return 'keeping your position solid';
+  if (!best) return t('idea.solid');
+  if (best.san.startsWith('O-O')) return t('idea.castle');
+  if (best.san.includes('+')) return t('idea.check');
+  if (best.captured) return t('idea.capture', { piece: pieceName(best.captured) });
+  if ((best.piece === 'n' || best.piece === 'b') && best.san[0] === best.san[0].toUpperCase())
+    return t('idea.develop');
+  if (bestLine?.length >= 2) return t('idea.initiative', { move: bestLine[1] });
+  return t('idea.solid');
 }
 
-// After `byColor` lands on `fromSquare`, how many enemy pieces does it hit?
 function detectFork(chess, fromSquare, byColor) {
   const targets = [];
   let hitsKing = false;
@@ -57,50 +57,45 @@ export function coachNote(args) {
   const oppColor = moverColor === 'w' ? 'b' : 'w';
   const oppBest = evalAfter && playMove(fenAfter, evalAfter.bestmove);
 
-  // Good / neutral — warm, brief.
-  if (tag === 'Sharp')
-    return { text: `Brave and correct — the sacrifice breaks through${bestLine?.[1] ? `, and ${bestLine[1]} keeps it rolling` : ''}.`, bestSan, category: null };
-  if (tag === 'Best')
-    return { text: `Spot on — that's the best move, ${ideaBehind(best, bestLine)}.`, bestSan, category: null };
-  if (tag === 'Solid')
-    return { text: `Good, solid choice — you gave up almost nothing.`, bestSan, category: null };
-  if (tag === 'Fine')
-    return { text: `Playable, though ${bestSan || 'another move'} had a touch more to offer.`, bestSan, category: null };
+  if (tag === 'Sharp') {
+    const cont = bestLine?.[1] ? t('coach.sharpCont', { move: bestLine[1] }) : '';
+    return { text: t('coach.sharp', { cont }), bestSan, category: null };
+  }
+  if (tag === 'Best') return { text: t('coach.best', { idea: ideaBehind(best, bestLine) }), bestSan, category: null };
+  if (tag === 'Solid') return { text: t('coach.solid'), bestSan, category: null };
+  if (tag === 'Fine') return { text: t('coach.fine', { best: bestSan || t('coach.anotherMove') }), bestSan, category: null };
 
-  // Mistakes — explain what went wrong, then the better plan.
   let text = '';
   let category = 'positional-drift';
 
   if (evalAfter?.mate != null && evalAfter.mate > 0) {
     const backRank = oppBest && isBackRank(oppBest.to, moverColor) && evalAfter.mate <= 2;
-    text = backRank
-      ? `Careful — this walks into a back-rank mate. `
-      : `Ouch — this walks into a forced mate. `;
-    if (oppBest) text += `After ${oppBest.san} there's no escape (mate in ${evalAfter.mate}). `;
-    text += bestSan ? `${bestSan} was the way to stay alive.` : '';
+    text = backRank ? t('coach.mateBackRank') : t('coach.mate');
+    if (oppBest) text += t('coach.mateAfter', { opp: oppBest.san, n: evalAfter.mate });
+    if (bestSan) text += t('coach.mateSaved', { best: bestSan });
     category = 'allowed-mate';
-  } else if (oppBest && oppBest.chess && detectFork(oppBest.chess, oppBest.to, oppColor).count >= 2) {
+  } else if (oppBest?.chess && detectFork(oppBest.chess, oppBest.to, oppColor).count >= 2) {
     const f = detectFork(oppBest.chess, oppBest.to, oppColor);
     text = f.hitsKing
-      ? `This lets ${oppBest.san} fork your king and ${PIECE_NAME[f.targets[0]] || 'a piece'} — you'll drop material next move. `
-      : `This runs into ${oppBest.san}, forking two of your pieces. `;
-    text += bestSan ? `${bestSan} would've kept everything defended.` : '';
+      ? t('coach.forkKing', { opp: oppBest.san, piece: pieceName(f.targets[0] || 'n') })
+      : t('coach.forkTwo', { opp: oppBest.san });
+    if (bestSan) text += t('coach.forkSaved', { best: bestSan });
     category = 'tactic-allowed';
   } else if (oppBest?.captured && (PIECE_VALUE[oppBest.captured] || 0) >= 3) {
-    text = `You left the ${PIECE_NAME[oppBest.captured]} loose — ${oppBest.san} just takes it. `;
-    text += bestSan ? `${bestSan} kept it protected.` : '';
+    text = t('coach.hung', { piece: pieceName(oppBest.captured), opp: oppBest.san });
+    if (bestSan) text += t('coach.hungSaved', { best: bestSan });
     category = 'hung-piece';
   } else if (playedMove?.captured) {
-    text = `This trade actually helps your opponent — you come out worse. `;
-    text += bestSan ? `${bestSan} kept the tension in your favour.` : '';
+    text = t('coach.badTrade');
+    if (bestSan) text += t('coach.badTradeSaved', { best: bestSan });
     category = 'bad-trade';
   } else if (bestSan) {
-    text = `${bestSan} was stronger, ${ideaBehind(best, bestLine)}. Your move hands a little back.`;
+    text = t('coach.missed', { best: bestSan, idea: ideaBehind(best, bestLine) });
     category = 'missed-better-move';
   } else {
-    text = `This slips a bit — there was something cleaner here.`;
+    text = t('coach.slip');
   }
 
-  if (delta >= 8) text += ` (about ${Math.round(delta)}% of your advantage)`;
+  if (delta >= 8) text += t('coach.cost', { pct: Math.round(delta) });
   return { text: text.trim(), bestSan, category };
 }
