@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ReviewerProvider } from './context/ReviewerContext.jsx';
 import TopBar from './components/TopBar.jsx';
+import Footer from './components/Footer.jsx';
 import Home from './pages/Home.jsx';
 import Review from './pages/Review.jsx';
 import Weakness from './pages/Weakness.jsx';
@@ -12,12 +13,15 @@ export default function App() {
       <ReviewerProvider>
         <div className="app">
           <TopBar />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/review" element={<Review />} />
-            <Route path="/weaknesses" element={<Weakness />} />
-            <Route path="*" element={<Home />} />
-          </Routes>
+          <div className="app-body">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/review" element={<Review />} />
+              <Route path="/weaknesses" element={<Weakness />} />
+              <Route path="*" element={<Home />} />
+            </Routes>
+          </div>
+          <Footer />
         </div>
       </ReviewerProvider>
     </BrowserRouter>

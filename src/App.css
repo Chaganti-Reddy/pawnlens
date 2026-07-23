@@ -14,10 +14,21 @@
 
 .app {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
   color: var(--text);
   font-family: 'Segoe UI', system-ui, sans-serif;
 }
+.app-body { flex: 1; }
+
+.site-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 14px 20px; border-top: 1px solid var(--line); background: var(--bg2);
+  color: var(--muted); font-size: 12px;
+}
+.site-footer a { color: var(--muted); text-decoration: none; }
+.site-footer a:hover { color: var(--accent); }
 
 /* ---- top bar ---- */
 .topbar {
@@ -34,12 +45,13 @@
 .brand { font-size: 20px; font-weight: 700; display: flex; align-items: baseline; gap: 8px; }
 .logo { color: var(--accent); font-size: 24px; }
 .tagline { font-size: 12px; color: var(--muted); font-weight: 400; }
-.topnav button {
-  background: none; border: none; color: var(--muted);
-  padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+.topnav a, .topnav button {
+  background: none; border: none; color: var(--muted); text-decoration: none;
+  padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; line-height: 1;
+  display: inline-flex; align-items: center;
 }
-.topnav button:hover:not(:disabled) { color: var(--text); background: var(--bg3); }
-.topnav button.on { color: var(--text); background: var(--bg3); }
+.topnav a:hover, .topnav button:hover:not(:disabled) { color: var(--text); background: var(--bg3); }
+.topnav a.on, .topnav button.on { color: var(--text); background: var(--bg3); }
 .topnav button:disabled { opacity: 0.4; cursor: default; }
 
 .banner.error {
