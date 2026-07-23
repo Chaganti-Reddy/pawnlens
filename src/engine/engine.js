@@ -10,6 +10,7 @@ export class Engine {
     this.ready = false;
     this._listeners = [];
     this._initPromise = null;
+    this._chain = Promise.resolve(); // serializes analyze() calls on the single worker
   }
 
   _onLine(line) {
@@ -65,8 +66,16 @@ export class Engine {
   }
 
   // Analyze one position. Resolves with { bestmove, lines: [{multipv, cp, mate, pv}] }.
+  // Calls are serialized so overlapping requests never corrupt the UCI stream.
+  analyze(fen, opts = {}) {
+    const run = () => this._analyzeNow(fen, opts);
+    const next = this._chain.then(run, run);
+    this._chain = next.catch(() => {});
+    return next;
+  }
+
   // Scores are from the side-to-move's perspective (UCI standard).
-  analyze(fen, { depth = 12, multipv = 1 } = {}) {
+  _analyzeNow(fen, { depth = 12, multipv = 1 } = {}) {
     return new Promise((resolve) => {
       const infoByPv = new Map();
 

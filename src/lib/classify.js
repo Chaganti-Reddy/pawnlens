@@ -32,6 +32,12 @@ export function gameAccuracy(accuracies) {
   return accuracies.reduce((a, b) => a + b, 0) / accuracies.length;
 }
 
+// Very rough performance-rating gauge from an accuracy %. Deliberately approximate.
+export function ratingFromAccuracy(acc) {
+  if (!acc) return 0;
+  return Math.round(Math.max(300, Math.min(2900, (acc - 50) * 40 + 800)));
+}
+
 export const TAGS = {
   Best: { label: 'Best', color: '#7dc96b', symbol: '', kind: 'good' },
   Sharp: { label: 'Sharp', color: '#26c2a3', symbol: '!!', kind: 'good' },

@@ -1,5 +1,5 @@
 import { Chess } from 'chess.js';
-import { winPct, classifyMove, gameAccuracy, TAGS } from './classify.js';
+import { winPct, classifyMove, gameAccuracy, ratingFromAccuracy, TAGS } from './classify.js';
 import { coachNote } from './coach.js';
 
 // Convert a UCI line to SAN, played out from `fen`. Returns up to `max` moves.
@@ -51,6 +51,7 @@ export async function analyzeGame(pgn, { engine, depth = 12, onProgress } = {}) 
   };
 
   const accByColor = { w: [], b: [] };
+  const accByPhase = { w: { opening: [], middlegame: [], endgame: [] }, b: { opening: [], middlegame: [], endgame: [] } };
   const moves = verbose.map((m, i) => {
     const before = evals[i];
     const after = evals[i + 1];
@@ -64,6 +65,8 @@ export async function analyzeGame(pgn, { engine, depth = 12, onProgress } = {}) 
       chessAfter, toSquare: m.to, moverColor: m.color, movedPieceType: m.piece,
     });
     accByColor[m.color].push(cls.accuracy);
+    const phase = i < 16 ? 'opening' : i < 40 ? 'middlegame' : 'endgame';
+    accByPhase[m.color][phase].push(cls.accuracy);
 
     const bestLine = uciLineToSan(positions[i], before.pv, 6);
     const note = coachNote({
@@ -93,7 +96,7 @@ export async function analyzeGame(pgn, { engine, depth = 12, onProgress } = {}) 
       note: note.text,
       bestSan: note.bestSan,
       category: note.category,
-      phase: i < 16 ? 'opening' : i < 40 ? 'middlegame' : 'endgame',
+      phase,
       fenBefore: positions[i],
       fenAfter: positions[i + 1],
       evalWhite: whiteEval(i + 1),
@@ -106,13 +109,24 @@ export async function analyzeGame(pgn, { engine, depth = 12, onProgress } = {}) 
   const counts = { w: {}, b: {} };
   for (const mv of moves) counts[mv.color][mv.tag] = (counts[mv.color][mv.tag] || 0) + 1;
 
+  const phaseAcc = (color) => ({
+    opening: gameAccuracy(accByPhase[color].opening),
+    middlegame: gameAccuracy(accByPhase[color].middlegame),
+    endgame: gameAccuracy(accByPhase[color].endgame),
+  });
+  const accuracyWhite = gameAccuracy(accByColor.w);
+  const accuracyBlack = gameAccuracy(accByColor.b);
+
   return {
     moves,
     positions,
     evals,
     evalSeries,
-    accuracyWhite: gameAccuracy(accByColor.w),
-    accuracyBlack: gameAccuracy(accByColor.b),
+    accuracyWhite,
+    accuracyBlack,
+    ratingWhite: ratingFromAccuracy(accuracyWhite),
+    ratingBlack: ratingFromAccuracy(accuracyBlack),
+    accuracyByPhase: { w: phaseAcc('w'), b: phaseAcc('b') },
     counts,
   };
 }
