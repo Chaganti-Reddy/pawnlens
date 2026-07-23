@@ -1,0 +1,125 @@
+import { createContext, useContext, useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Engine } from '../engine/engine.js';
+import { analyzeGame } from '../lib/analyze.js';
+import { fetchChessComGames, fetchLichessGames, splitPgns, pgnMeta } from '../lib/fetchGames.js';
+import { summarize, addToHistory, loadHistory } from '../lib/storage.js';
+import { addRecent } from '../lib/recents.js';
+
+const Ctx = createContext(null);
+export const useReviewer = () => useContext(Ctx);
+
+const BATCH_DEPTH = 8;
+
+export function ReviewerProvider({ children }) {
+  const navigate = useNavigate();
+  const engineRef = useRef(null);
+
+  const [engineStatus, setEngineStatus] = useState('loading');
+  const [source, setSource] = useState('chesscom');
+  const [games, setGames] = useState([]);
+  const [lastQuery, setLastQuery] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const [depth, setDepth] = useState(12);
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [batch, setBatch] = useState(null);
+  const [analysis, setAnalysis] = useState(null);
+  const [focusColor, setFocusColor] = useState('w');
+  const [selectedPly, setSelectedPly] = useState(-1);
+
+  const [history, setHistory] = useState(loadHistory());
+
+  const ensureEngine = useCallback(async () => {
+    const eng = engineRef.current || (engineRef.current = new Engine());
+    await eng.init();
+    return eng;
+  }, []);
+  useEffect(() => {
+    let alive = true;
+    ensureEngine().then(() => alive && setEngineStatus('ready')).catch(() => {});
+    return () => { alive = false; };
+  }, [ensureEngine]);
+
+  const fetchGames = useCallback(async (src, name, count = 20) => {
+    setError('');
+    setBusy(true);
+    setGames([]);
+    setSource(src);
+    try {
+      const fetcher = src === 'chesscom' ? fetchChessComGames : fetchLichessGames;
+      const list = await fetcher(name, count);
+      setGames(list);
+      setLastQuery(name.trim());
+      addRecent(src, name.trim());
+    } catch (e) {
+      setError(e.message || String(e));
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  const loadPgnText = useCallback((text) => {
+    setError('');
+    const list = splitPgns(text).map((p) => ({ ...pgnMeta(p), source: 'pgn' }));
+    if (!list.length) { setError('Paste a valid PGN first.'); return; }
+    setGames(list);
+    setLastQuery('');
+    setSource('pgn');
+  }, []);
+
+  const runAnalysis = useCallback(async (game, color) => {
+    const side = color || game.userColor || 'w';
+    setError('');
+    setFocusColor(side);
+    setAnalysis(null);
+    setSelectedPly(-1);
+    setBatch(null);
+    navigate('/review');
+    try {
+      setEngineStatus('loading');
+      const eng = await ensureEngine();
+      setEngineStatus('ready');
+      setProgress({ done: 0, total: 1 });
+      const res = await analyzeGame(game.pgn, { engine: eng, depth, onProgress: (d, t) => setProgress({ done: d, total: t }) });
+      res.game = game;
+      setAnalysis(res);
+      const firstBad = res.moves.find((m) => m.color === side && m.tagKind === 'bad');
+      setSelectedPly(firstBad ? firstBad.ply : res.moves.length - 1);
+      setHistory(addToHistory(summarize(game, res, side)));
+    } catch (e) {
+      setError(e.message || String(e));
+    }
+  }, [depth, ensureEngine, navigate]);
+
+  const runBatch = useCallback(async () => {
+    if (!games.length) return;
+    setError('');
+    const user = lastQuery;
+    navigate(`/weaknesses${user ? `?u=${encodeURIComponent(user)}` : ''}`);
+    try {
+      const eng = await ensureEngine();
+      const n = games.length;
+      for (let i = 0; i < n; i++) {
+        setBatch({ i: i + 1, n });
+        setProgress({ done: 0, total: 1 });
+        const g = games[i];
+        const res = await analyzeGame(g.pgn, { engine: eng, depth: BATCH_DEPTH, onProgress: (d, t) => setProgress({ done: d, total: t }) });
+        setHistory(addToHistory(summarize(g, res, g.userColor || 'w')));
+      }
+    } catch (e) {
+      setError(e.message || String(e));
+    } finally {
+      setBatch(null);
+    }
+  }, [games, lastQuery, ensureEngine, navigate]);
+
+  const value = {
+    engineStatus, source, games, lastQuery, busy, error, setError,
+    depth, setDepth, progress, batch, analysis, focusColor, setFocusColor,
+    selectedPly, setSelectedPly, history, setHistory,
+    fetchGames, loadPgnText, runAnalysis, runBatch,
+  };
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}

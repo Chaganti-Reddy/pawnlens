@@ -279,6 +279,73 @@
 
 .known-names button.on { border-color: var(--accent); color: var(--text); }
 
+/* logo tile */
+.brand { text-decoration: none; color: var(--text); }
+.logo-tile {
+  display: inline-flex; align-items: center; justify-content: center; border-radius: 9px;
+  background: linear-gradient(135deg, #7dc96b, #26c2a3); color: #14210f; flex-shrink: 0;
+}
+
+/* buttons with icons */
+.primary { display: inline-flex; align-items: center; gap: 8px; }
+.tabs button svg, .side-pick button svg { flex-shrink: 0; }
+
+/* count picker */
+.count-pick {
+  padding: 0 12px; background: var(--bg2); border: 1px solid var(--line);
+  color: var(--text); border-radius: 8px; cursor: pointer; font-size: 14px;
+}
+
+/* inline error (home) */
+.inline-error {
+  margin-top: 14px; padding: 10px 14px; background: #3a2420; color: #ffbdb5;
+  border: 1px solid var(--bad); border-radius: 8px; font-size: 14px;
+}
+
+/* avatar image */
+.avatar-img { object-fit: cover; border: none; }
+
+/* time-class + source icons */
+.tc-icon { font-size: 15px; color: var(--muted); }
+.gc-left svg { color: var(--muted); }
+
+/* back button */
+.back-btn {
+  display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
+  background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 2px 0;
+}
+.back-btn:hover { color: var(--text); }
+
+/* eval graph */
+.eval-graph { width: 100%; height: 46px; cursor: pointer; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); }
+.eval-graph svg { width: 100%; height: 100%; display: block; }
+
+/* best line */
+.best-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.best-line.inline { border: none; margin: 0; padding: 0; }
+.bl-icon { color: var(--accent2); flex-shrink: 0; }
+.bl-label { font-size: 12px; color: var(--muted); }
+.bl-move { font-size: 13px; font-weight: 600; background: var(--bg3); padding: 2px 7px; border-radius: 5px; }
+
+/* compare panel */
+.compare { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.compare-toggle {
+  width: 100%; display: flex; align-items: center; gap: 8px; background: none; border: none;
+  color: var(--text); padding: 12px 14px; cursor: pointer; font-size: 14px; font-weight: 600; text-align: left;
+}
+.compare-toggle svg:first-child { color: var(--accent); }
+.compare-toggle .chev { margin-left: auto; transition: transform 0.2s; color: var(--muted); }
+.compare-toggle .chev.open { transform: rotate(180deg); }
+.compare-body { padding: 0 14px 14px; }
+.master-moves { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.master-moves li { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.master-moves li.you { color: var(--accent); font-weight: 700; }
+.mm-san { width: 46px; font-weight: 600; }
+.mm-bar { flex: 1; height: 7px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.mm-bar span { display: block; height: 100%; background: var(--accent2); }
+.mm-share { width: 34px; text-align: right; color: var(--muted); }
+.mm-tag { font-size: 11px; color: var(--accent); }
+
 @media (max-width: 780px) {
   .review-view { grid-template-columns: 1fr; }
   .dash-stats { grid-template-columns: repeat(2, 1fr); }

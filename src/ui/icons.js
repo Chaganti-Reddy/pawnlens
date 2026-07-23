@@ -1,0 +1,24 @@
+// Single place for every icon in the app — all from react-icons packages.
+// No emoji anywhere in the UI.
+export {
+  FaChessKnight,
+  FaChessKing,
+  FaChessQueen,
+  FaBolt,
+  FaStopwatch,
+  FaRegClock,
+  FaRegCalendar,
+  FaAngleLeft,
+  FaAngleRight,
+  FaAnglesLeft,
+  FaAnglesRight,
+  FaArrowLeftLong,
+  FaXmark,
+  FaTrashCan,
+  FaChevronDown,
+  FaMagnifyingGlass,
+  FaCircleCheck,
+  FaLightbulb,
+  FaCrown,
+} from 'react-icons/fa6';
+export { SiChessdotcom, SiLichess } from 'react-icons/si';
