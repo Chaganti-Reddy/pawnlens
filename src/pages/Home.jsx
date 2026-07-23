@@ -93,11 +93,6 @@ export default function Home() {
           ))}
         </div>
       </div>
-
-      <p className="footnote">
-        Runs Stockfish 18 in your browser — nothing uploaded, no limits, no login.
-        First run downloads the ~7&nbsp;MB engine once, then it's cached. Not affiliated with chess.com or lichess.
-      </p>
     </main>
   );
 }
