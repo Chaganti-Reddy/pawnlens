@@ -1,14 +1,20 @@
-import { useCallback, useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useRef } from 'react';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Chessboard } from 'react-chessboard';
 import { useReviewer } from '../context/ReviewerContext.jsx';
-import { TAGS } from '../lib/classify.js';
 import EvalBar from '../components/EvalBar.jsx';
 import EvalGraph from '../components/EvalGraph.jsx';
 import MoveList from '../components/MoveList.jsx';
 import CoachCard from '../components/CoachCard.jsx';
 import ComparePanel from '../components/ComparePanel.jsx';
+import StatsPanel from '../components/StatsPanel.jsx';
+import CriticalMoments from '../components/CriticalMoments.jsx';
+import EngineLines from '../components/EngineLines.jsx';
+import ShareButton from '../components/ShareButton.jsx';
+import { getBoardTheme, BOARD_THEMES } from '../lib/theme.js';
+import { playMove } from '../lib/sound.js';
+import { parseSharedGame } from '../lib/share.js';
 import { FaAngleLeft, FaAngleRight, FaAnglesLeft, FaAnglesRight, FaArrowLeftLong } from '../ui/icons.js';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -16,10 +22,26 @@ const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 export default function Review() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { analysis, focusColor, progress, engineStatus, selectedPly, setSelectedPly, runAnalysis } = useReviewer();
+  const [params] = useSearchParams();
+  const { analysis, focusColor, progress, engineStatus, selectedPly, setSelectedPly, runAnalysis, runAnalysisFromPgn } = useReviewer();
+
+  // Shared link: decode PGN from the URL and analyze it once.
+  const sharedLoaded = useRef(false);
+  useEffect(() => {
+    if (sharedLoaded.current || analysis || progress.total > 0) return;
+    const shared = parseSharedGame(params.toString());
+    if (shared) {
+      sharedLoaded.current = true;
+      runAnalysisFromPgn(shared.pgn, shared.side);
+    }
+  }, [params, analysis, progress.total, runAnalysisFromPgn]);
 
   const total = analysis?.moves.length ?? 0;
-  const go = useCallback((ply) => setSelectedPly(Math.max(-1, Math.min(total - 1, ply))), [total, setSelectedPly]);
+  const go = useCallback((ply) => {
+    const clamped = Math.max(-1, Math.min(total - 1, ply));
+    setSelectedPly(clamped);
+    if (clamped >= 0 && analysis) playMove(analysis.moves[clamped]?.san?.includes('x'));
+  }, [total, setSelectedPly, analysis]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -34,13 +56,14 @@ export default function Review() {
 
   const analyzing = !analysis || progress.done < progress.total;
   const loadingPct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
+  const hasSharedParam = !!params.get('g');
 
-  // No analysis and nothing running -> go home.
-  if (!analysis && engineStatus === 'ready' && progress.total === 0) return <Navigate to="/" replace />;
+  if (!analysis && engineStatus === 'ready' && progress.total === 0 && !hasSharedParam) return <Navigate to="/" replace />;
 
   const node = selectedPly >= 0 && analysis ? analysis.moves[selectedPly] : null;
   const fen = node ? node.fenAfter : START_FEN;
   const evalWhite = node ? node.evalWhite : { cp: 0 };
+  const boardTheme = BOARD_THEMES[getBoardTheme()];
 
   const arrows = [];
   const squareStyles = {};
@@ -54,8 +77,8 @@ export default function Review() {
   }
   const boardOptions = {
     id: 'review', position: fen, boardOrientation: focusColor === 'w' ? 'white' : 'black',
-    arrows, squareStyles, allowDragging: false, showNotation: true,
-    darkSquareStyle: { backgroundColor: '#6b8f5e' }, lightSquareStyle: { backgroundColor: '#e9edcc' },
+    arrows, squareStyles, allowDragging: false, showNotation: true, showAnimations: true,
+    darkSquareStyle: { backgroundColor: boardTheme.dark }, lightSquareStyle: { backgroundColor: boardTheme.light },
   };
 
   return (
@@ -64,7 +87,7 @@ export default function Review() {
         <button className="back-btn" onClick={() => navigate('/')}><FaArrowLeftLong /> {t('review.back')}</button>
         {analysis && (
           <div className="game-head">
-            <span className="gh-players">{analysis.game.white} vs {analysis.game.black}</span>
+            <span className="gh-players">{analysis.game.white} {t('review.vs')} {analysis.game.black}</span>
             {analysis.game.opening && <span className="gh-opening">{analysis.game.opening}</span>}
           </div>
         )}
@@ -90,26 +113,27 @@ export default function Review() {
           </div>
         ) : (
           <>
-            <div className="acc-cards">
-              <div className={`acc ${focusColor === 'w' ? 'focus' : ''}`}>
-                <div className="acc-val">{analysis.accuracyWhite.toFixed(1)}%</div>
-                <div className="acc-lbl">{analysis.game.white}</div>
+            <div className="side-head">
+              <div className="acc-cards">
+                <div className={`acc ${focusColor === 'w' ? 'focus' : ''}`}>
+                  <div className="acc-val">{analysis.accuracyWhite.toFixed(1)}%</div>
+                  <div className="acc-lbl">{analysis.game.white}</div>
+                </div>
+                <div className={`acc ${focusColor === 'b' ? 'focus' : ''}`}>
+                  <div className="acc-val">{analysis.accuracyBlack.toFixed(1)}%</div>
+                  <div className="acc-lbl">{analysis.game.black}</div>
+                </div>
               </div>
-              <div className={`acc ${focusColor === 'b' ? 'focus' : ''}`}>
-                <div className="acc-val">{analysis.accuracyBlack.toFixed(1)}%</div>
-                <div className="acc-lbl">{analysis.game.black}</div>
-              </div>
+              <ShareButton pgn={analysis.game.pgn} side={focusColor} />
             </div>
-            <div className="tag-legend">
-              {Object.entries(analysis.counts[focusColor] || {}).map(([key, n]) => (
-                <span className="chip" key={key} style={{ borderColor: TAGS[key]?.color }}>
-                  <span className="chip-dot" style={{ background: TAGS[key]?.color }} />{t(`tag.${key}`)} {n}
-                </span>
-              ))}
-            </div>
+
+            <StatsPanel analysis={analysis} selectedPly={selectedPly} focusColor={focusColor} />
             <CoachCard node={node} />
+            <EngineLines fen={node ? node.fenBefore : START_FEN} />
             <ComparePanel node={node} />
+            <CriticalMoments moves={analysis.moves} focusColor={focusColor} onSelect={go} selectedPly={selectedPly} />
             <MoveList moves={analysis.moves} selectedPly={selectedPly} onSelect={go} />
+
             <div className="re-analyze">
               <button onClick={() => runAnalysis(analysis.game, focusColor === 'w' ? 'b' : 'w')}>
                 {t('review.analyzeFromSide', { side: focusColor === 'w' ? t('review.sideBlack') : t('review.sideWhite') })}

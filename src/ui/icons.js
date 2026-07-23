@@ -20,5 +20,15 @@ export {
   FaCircleCheck,
   FaLightbulb,
   FaCrown,
+  FaGear,
+  FaSun,
+  FaMoon,
+  FaVolumeHigh,
+  FaVolumeXmark,
+  FaKeyboard,
+  FaShareNodes,
+  FaDumbbell,
+  FaCircleXmark,
+  FaChessBoard,
 } from 'react-icons/fa6';
 export { SiChessdotcom, SiLichess } from 'react-icons/si';

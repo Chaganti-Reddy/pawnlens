@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useReviewer } from '../context/ReviewerContext.jsx';
-import { aggregateWeaknesses, clearHistory } from '../lib/storage.js';
+import { aggregateWeaknesses, clearHistory, accuracyTrend, worstOpenings } from '../lib/storage.js';
 import Dashboard from '../components/Dashboard.jsx';
+import AccuracyTrend from '../components/AccuracyTrend.jsx';
 import { FaTrashCan } from '../ui/icons.js';
 
 export default function Weakness() {
@@ -19,6 +20,8 @@ export default function Weakness() {
 
   const knownNames = [...new Set(history.map((h) => h.focusName))].filter(Boolean);
   const data = dashName ? aggregateWeaknesses(dashName) : null;
+  const trend = dashName ? accuracyTrend(dashName) : [];
+  const openings = dashName ? worstOpenings(dashName) : [];
   const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
 
   if (batch) {
@@ -48,6 +51,21 @@ export default function Weakness() {
           <FaTrashCan /> {t('weakness.clear', { count: history.length })}
         </button>
       </div>
+      {data && trend.length >= 2 && <AccuracyTrend data={trend} />}
+      {data && openings.length > 0 && (
+        <div className="openings">
+          <h3>{t('weakness.worstOpenings')}</h3>
+          <div className="openings-list">
+            {openings.map((o) => (
+              <div className="opening-row" key={o.opening}>
+                <span className="op-name">{o.opening}</span>
+                <span className="op-games">{t('weakness.gamesCount', { count: o.games })}</span>
+                <span className="op-acc">{o.avgAccuracy.toFixed(0)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <Dashboard data={data} playerName={dashName} />
     </main>
   );

@@ -5,6 +5,7 @@ import { analyzeGame } from '../lib/analyze.js';
 import { fetchChessComGames, fetchLichessGames, splitPgns, pgnMeta } from '../lib/fetchGames.js';
 import { summarize, addToHistory, loadHistory } from '../lib/storage.js';
 import { addRecent } from '../lib/recents.js';
+import { applyTheme, getTheme } from '../lib/theme.js';
 import i18n from '../i18n.js';
 
 const Ctx = createContext(null);
@@ -38,9 +39,17 @@ export function ReviewerProvider({ children }) {
     return eng;
   }, []);
   useEffect(() => {
+    applyTheme(getTheme());
     let alive = true;
     ensureEngine().then(() => alive && setEngineStatus('ready')).catch(() => {});
     return () => { alive = false; };
+  }, [ensureEngine]);
+
+  // Lazy: top N engine moves for a single position (for the review "engine lines").
+  const getTopMoves = useCallback(async (fen, n = 3) => {
+    const eng = await ensureEngine();
+    const r = await eng.analyze(fen, { depth: 12, multipv: n });
+    return r.lines;
   }, [ensureEngine]);
 
   const fetchGames = useCallback(async (src, name, count = 20) => {
@@ -94,6 +103,30 @@ export function ReviewerProvider({ children }) {
     }
   }, [depth, ensureEngine, navigate]);
 
+  // Analyze a raw PGN (used by shared links). Does not navigate.
+  const runAnalysisFromPgn = useCallback(async (pgn, side) => {
+    const game = { ...pgnMeta(pgn), source: 'shared' };
+    const color = side || game.userColor || 'w';
+    setError('');
+    setFocusColor(color);
+    setAnalysis(null);
+    setSelectedPly(-1);
+    setBatch(null);
+    try {
+      setEngineStatus('loading');
+      const eng = await ensureEngine();
+      setEngineStatus('ready');
+      setProgress({ done: 0, total: 1 });
+      const res = await analyzeGame(pgn, { engine: eng, depth, onProgress: (d, t) => setProgress({ done: d, total: t }) });
+      res.game = game;
+      setAnalysis(res);
+      const firstBad = res.moves.find((m) => m.color === color && m.tagKind === 'bad');
+      setSelectedPly(firstBad ? firstBad.ply : res.moves.length - 1);
+    } catch (e) {
+      setError(e.message || String(e));
+    }
+  }, [depth, ensureEngine]);
+
   const runBatch = useCallback(async () => {
     if (!games.length) return;
     setError('');
@@ -120,7 +153,7 @@ export function ReviewerProvider({ children }) {
     engineStatus, source, games, lastQuery, busy, error, setError,
     depth, setDepth, progress, batch, analysis, focusColor, setFocusColor,
     selectedPly, setSelectedPly, history, setHistory,
-    fetchGames, loadPgnText, runAnalysis, runBatch,
+    fetchGames, loadPgnText, runAnalysis, runAnalysisFromPgn, runBatch, getTopMoves,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -6,9 +6,28 @@
   "nav": {
     "newReview": "New review",
     "review": "Review",
+    "train": "Train",
     "weaknesses": "My weaknesses",
     "engineReady": "Engine ready",
     "engineLoading": "Loading engine…"
+  },
+  "common": {
+    "close": "Close"
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "dark": "Dark",
+    "light": "Light",
+    "board": "Board",
+    "sound": "Sound",
+    "on": "On",
+    "off": "Off",
+    "shortcuts": "Keyboard shortcuts"
+  },
+  "shortcuts": {
+    "prevNext": "Previous / next move",
+    "startEnd": "Jump to start / end"
   },
   "home": {
     "tabChesscom": "chess.com",
@@ -52,7 +71,32 @@
     "navPrev": "Prev (←)",
     "navNext": "Next (→)",
     "navEnd": "End (End)",
-    "evalGraphHint": "Click to jump to a move"
+    "evalGraphHint": "Click to jump to a move",
+    "winNow": "Win chance now",
+    "runningAccuracy": "Accuracy so far",
+    "startPos": "Starting position",
+    "movePos": "Move {{n}} of {{total}}",
+    "phaseAccuracy": "By phase",
+    "overall": "overall",
+    "criticalMoments": "Turning points",
+    "engineLines": "Engine's top moves",
+    "share": "Share",
+    "linkCopied": "Link copied!"
+  },
+  "train": {
+    "empty1": "No puzzles yet.",
+    "empty2": "Review some games first — your mistakes become puzzles here.",
+    "allDone": "All caught up!",
+    "learned": "{{learned}} of {{total}} positions learned.",
+    "progress": "Puzzle {{n}} of {{total}}",
+    "findBest": "{{side}} to move — find the best move.",
+    "correct": "Correct — {{move}}!",
+    "wrong": "Not quite. Try again or reveal.",
+    "answer": "The move was {{move}}.",
+    "reveal": "Reveal",
+    "next": "Next",
+    "sideWhite": "White",
+    "sideBlack": "Black"
   },
   "weakness": {
     "yourUsername": "Your username",
@@ -67,7 +111,11 @@
     "statAccuracy": "Avg accuracy",
     "statMistakes": "Mistakes / game",
     "statPhase": "Weakest phase",
-    "eg": "e.g."
+    "eg": "e.g.",
+    "trend": "Accuracy trend",
+    "trendFoot": "across your last {{count}} analyzed games",
+    "worstOpenings": "Openings to work on",
+    "gamesCount": "{{count}} games"
   },
   "errors": {
     "network": "Can't reach the network. Check your connection and try again.",

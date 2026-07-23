@@ -1,11 +1,13 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Logo from './Logo.jsx';
+import SettingsMenu from './SettingsMenu.jsx';
 import { useReviewer } from '../context/ReviewerContext.jsx';
 
 export default function TopBar() {
   const { t } = useTranslation();
   const { engineStatus, analysis } = useReviewer();
+  const cls = ({ isActive }) => (isActive ? 'on' : '');
   return (
     <header className="topbar">
       <Link to="/" className="brand">
@@ -14,10 +16,12 @@ export default function TopBar() {
         <span className="tagline">{t('brand.tagline')}</span>
       </Link>
       <nav className="topnav">
-        <NavLink to="/" end className={({ isActive }) => (isActive ? 'on' : '')}>{t('nav.newReview')}</NavLink>
-        {analysis && <NavLink to="/review" className={({ isActive }) => (isActive ? 'on' : '')}>{t('nav.review')}</NavLink>}
-        <NavLink to="/weaknesses" className={({ isActive }) => (isActive ? 'on' : '')}>{t('nav.weaknesses')}</NavLink>
+        <NavLink to="/" end className={cls}>{t('nav.newReview')}</NavLink>
+        {analysis && <NavLink to="/review" className={cls}>{t('nav.review')}</NavLink>}
+        <NavLink to="/train" className={cls}>{t('nav.train')}</NavLink>
+        <NavLink to="/weaknesses" className={cls}>{t('nav.weaknesses')}</NavLink>
         <span className={`engine-dot ${engineStatus}`} title={engineStatus === 'ready' ? t('nav.engineReady') : t('nav.engineLoading')} />
+        <SettingsMenu />
       </nav>
     </header>
   );
