@@ -127,18 +127,19 @@ export function ReviewerProvider({ children }) {
     }
   }, [depth, ensureEngine]);
 
-  const runBatch = useCallback(async () => {
-    if (!games.length) return;
+  const runBatch = useCallback(async (list) => {
+    const items = list && list.length ? list : games;
+    if (!items.length) return;
     setError('');
     const user = lastQuery;
     navigate(`/weaknesses${user ? `?u=${encodeURIComponent(user)}` : ''}`);
     try {
       const eng = await ensureEngine();
-      const n = games.length;
+      const n = items.length;
       for (let i = 0; i < n; i++) {
         setBatch({ i: i + 1, n });
         setProgress({ done: 0, total: 1 });
-        const g = games[i];
+        const g = items[i];
         const res = await analyzeGame(g.pgn, { engine: eng, depth: BATCH_DEPTH, onProgress: (d, t) => setProgress({ done: d, total: t }) });
         setHistory(addToHistory(summarize(g, res, g.userColor || 'w')));
       }

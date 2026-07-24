@@ -18,8 +18,12 @@ export default function Home() {
   const [pgnText, setPgnText] = useState('');
   const [count, setCount] = useState(25);
   const [recents, setRecents] = useState(getRecents('chesscom'));
+  const [fResult, setFResult] = useState('all');
+  const [fTime, setFTime] = useState('all');
+  const [fOpening, setFOpening] = useState('all');
 
   useEffect(() => { setRecents(getRecents(tab)); }, [tab, games]);
+  useEffect(() => { setFResult('all'); setFTime('all'); setFOpening('all'); }, [games]);
 
   const submit = (name) => {
     if (tab === 'pgn') { loadPgnText(pgnText); return; }
@@ -30,6 +34,13 @@ export default function Home() {
   };
 
   const showList = games.length > 0 && (tab === 'pgn' ? source === 'pgn' : source === tab);
+  const openingsInGames = [...new Set(games.map((g) => g.opening).filter(Boolean))];
+  const timesInGames = [...new Set(games.map((g) => g.timeClass).filter(Boolean))];
+  const filtered = games.filter((g) =>
+    (fResult === 'all' || g.userResult === fResult) &&
+    (fTime === 'all' || g.timeClass === fTime) &&
+    (fOpening === 'all' || g.opening === fOpening)
+  );
 
   return (
     <main className="input-view">
@@ -75,14 +86,34 @@ export default function Home() {
 
       {showList && (
         <>
+          <div className="filters">
+            <select value={fResult} onChange={(e) => setFResult(e.target.value)}>
+              <option value="all">{t('home.filterAllResults')}</option>
+              <option value="win">{t('home.filterWins')}</option>
+              <option value="loss">{t('home.filterLosses')}</option>
+              <option value="draw">{t('home.filterDraws')}</option>
+            </select>
+            {timesInGames.length > 1 && (
+              <select value={fTime} onChange={(e) => setFTime(e.target.value)}>
+                <option value="all">{t('home.filterAllTimes')}</option>
+                {timesInGames.map((tc) => <option key={tc} value={tc}>{tc}</option>)}
+              </select>
+            )}
+            {openingsInGames.length > 1 && (
+              <select value={fOpening} onChange={(e) => setFOpening(e.target.value)}>
+                <option value="all">{t('home.filterAllOpenings')}</option>
+                {openingsInGames.map((op) => <option key={op} value={op}>{op}</option>)}
+              </select>
+            )}
+          </div>
           {lastQuery && (
             <div className="batch-bar">
-              <span>{t('home.gamesLoaded', { count: games.length })} <b>{lastQuery}</b></span>
-              <button className="primary sm" onClick={runBatch}>{t('home.analyzeAll')}</button>
+              <span>{t('home.gamesLoaded', { count: filtered.length })} <b>{lastQuery}</b></span>
+              <button className="primary sm" onClick={() => runBatch(filtered)}>{t('home.analyzeAll')}</button>
             </div>
           )}
           <div className="picker">
-            {games.map((g, i) => <GameCard key={i} game={g} focusName={lastQuery} onReview={() => runAnalysis(g)} />)}
+            {filtered.map((g, i) => <GameCard key={i} game={g} focusName={lastQuery} onReview={() => runAnalysis(g)} />)}
           </div>
         </>
       )}
