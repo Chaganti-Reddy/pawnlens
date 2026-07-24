@@ -83,6 +83,29 @@ export function worstOpenings(playerName, minGames = 2) {
     .slice(0, 5);
 }
 
+// Mistakes bucketed by move number — reveals when a player tends to slip.
+export function mistakeHeatmap(playerName) {
+  const games = loadHistory().filter(
+    (g) => (g.focusName || '').toLowerCase() === (playerName || '').toLowerCase()
+  );
+  const buckets = [
+    { label: '1–10', min: 1, max: 10, count: 0 },
+    { label: '11–20', min: 11, max: 20, count: 0 },
+    { label: '21–30', min: 21, max: 30, count: 0 },
+    { label: '31–40', min: 31, max: 40, count: 0 },
+    { label: '41+', min: 41, max: Infinity, count: 0 },
+  ];
+  for (const g of games) {
+    for (const bm of g.badMoves || []) {
+      const moveNo = Math.floor(bm.ply / 2) + 1;
+      const b = buckets.find((x) => moveNo >= x.min && moveNo <= x.max);
+      if (b) b.count++;
+    }
+  }
+  const max = Math.max(1, ...buckets.map((b) => b.count));
+  return buckets.map((b) => ({ ...b, pct: Math.round((b.count / max) * 100) }));
+}
+
 // Collect all stored bad moves that can become puzzles.
 export function collectPuzzles(playerName) {
   const games = loadHistory().filter(

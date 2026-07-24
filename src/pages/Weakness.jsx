@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useReviewer } from '../context/ReviewerContext.jsx';
-import { aggregateWeaknesses, clearHistory, accuracyTrend, worstOpenings } from '../lib/storage.js';
+import { aggregateWeaknesses, clearHistory, accuracyTrend, worstOpenings, mistakeHeatmap } from '../lib/storage.js';
 import Dashboard from '../components/Dashboard.jsx';
 import AccuracyTrend from '../components/AccuracyTrend.jsx';
+import MistakeHeatmap from '../components/MistakeHeatmap.jsx';
 import { FaTrashCan } from '../ui/icons.js';
 
 export default function Weakness() {
@@ -22,6 +23,7 @@ export default function Weakness() {
   const data = dashName ? aggregateWeaknesses(dashName) : null;
   const trend = dashName ? accuracyTrend(dashName) : [];
   const openings = dashName ? worstOpenings(dashName) : [];
+  const heatmap = dashName ? mistakeHeatmap(dashName) : [];
   const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
 
   if (batch) {
@@ -52,6 +54,7 @@ export default function Weakness() {
         </button>
       </div>
       {data && trend.length >= 2 && <AccuracyTrend data={trend} />}
+      {data && <MistakeHeatmap data={heatmap} />}
       {data && openings.length > 0 && (
         <div className="openings">
           <h3>{t('weakness.worstOpenings')}</h3>
