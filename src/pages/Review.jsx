@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Chessboard } from 'react-chessboard';
+import { Chess } from 'chess.js';
 import { useReviewer } from '../context/ReviewerContext.jsx';
 import EvalBar from '../components/EvalBar.jsx';
 import EvalGraph from '../components/EvalGraph.jsx';
@@ -11,11 +12,12 @@ import ComparePanel from '../components/ComparePanel.jsx';
 import StatsPanel from '../components/StatsPanel.jsx';
 import CriticalMoments from '../components/CriticalMoments.jsx';
 import EngineLines from '../components/EngineLines.jsx';
-import ShareButton from '../components/ShareButton.jsx';
+import ExportMenu from '../components/ExportMenu.jsx';
+import Takeaway from '../components/Takeaway.jsx';
 import { getBoardTheme, BOARD_THEMES } from '../lib/theme.js';
 import { playMove } from '../lib/sound.js';
 import { parseSharedGame } from '../lib/share.js';
-import { FaAngleLeft, FaAngleRight, FaAnglesLeft, FaAnglesRight, FaArrowLeftLong } from '../ui/icons.js';
+import { FaAngleLeft, FaAngleRight, FaAnglesLeft, FaAnglesRight, FaArrowLeftLong, FaDumbbell, FaCircleCheck, FaCircleXmark } from '../ui/icons.js';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -37,9 +39,16 @@ export default function Review() {
   }, [params, analysis, progress.total, runAnalysisFromPgn]);
 
   const total = analysis?.moves.length ?? 0;
+
+  // Retry-the-position: play the best move yourself on a blunder.
+  const [retry, setRetry] = useState(false);
+  const [retryFen, setRetryFen] = useState(null);
+  const [retryStatus, setRetryStatus] = useState('idle'); // idle | correct | wrong
+
   const go = useCallback((ply) => {
     const clamped = Math.max(-1, Math.min(total - 1, ply));
     setSelectedPly(clamped);
+    setRetry(false); setRetryStatus('idle'); setRetryFen(null);
     if (clamped >= 0 && analysis) playMove(analysis.moves[clamped]?.san?.includes('x'));
   }, [total, setSelectedPly, analysis]);
 
@@ -64,10 +73,34 @@ export default function Review() {
   const fen = node ? node.fenAfter : START_FEN;
   const evalWhite = node ? node.evalWhite : { cp: 0 };
   const boardTheme = BOARD_THEMES[getBoardTheme()];
+  const canRetry = node && node.tagKind === 'bad' && node.bestUci;
+
+  const startRetry = () => { setRetry(true); setRetryStatus('idle'); setRetryFen(node.fenBefore); };
+  const exitRetry = () => { setRetry(false); setRetryStatus('idle'); setRetryFen(null); };
+  const onRetryDrop = ({ sourceSquare, targetSquare }) => {
+    if (retryStatus === 'correct') return false;
+    const baseFen = retryFen || node.fenBefore;
+    try {
+      const c = new Chess(baseFen);
+      const mv = c.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+      if (!mv) return false;
+      const uci = mv.from + mv.to + (mv.promotion || '');
+      if (uci.slice(0, 4) === node.bestUci.slice(0, 4)) {
+        playMove(!!mv.captured);
+        // show the payoff: play the engine's expected reply, if we have it
+        if (node.bestLine?.[1]) { try { c.move(node.bestLine[1]); } catch { /* ignore */ } }
+        setRetryFen(c.fen());
+        setRetryStatus('correct');
+      } else {
+        setRetryStatus('wrong');
+      }
+    } catch { /* illegal */ }
+    return false;
+  };
 
   const arrows = [];
   const squareStyles = {};
-  if (node) {
+  if (node && !retry) {
     arrows.push({ startSquare: node.from, endSquare: node.to, color: 'rgba(255,255,255,0.30)' });
     squareStyles[node.from] = { background: 'rgba(230,193,75,0.28)' };
     squareStyles[node.to] = { background: 'rgba(230,193,75,0.40)' };
@@ -75,11 +108,19 @@ export default function Review() {
       arrows.push({ startSquare: node.bestUci.slice(0, 2), endSquare: node.bestUci.slice(2, 4), color: '#26c2a3' });
     }
   }
-  const boardOptions = {
-    id: 'review', position: fen, boardOrientation: focusColor === 'w' ? 'white' : 'black',
-    arrows, squareStyles, allowDragging: false, showNotation: true, showAnimations: true,
-    darkSquareStyle: { backgroundColor: boardTheme.dark }, lightSquareStyle: { backgroundColor: boardTheme.light },
-  };
+  const boardOptions = retry
+    ? {
+        id: 'review', position: retryFen || node.fenBefore,
+        boardOrientation: focusColor === 'w' ? 'white' : 'black',
+        allowDragging: retryStatus !== 'correct', showNotation: true, showAnimations: true,
+        onPieceDrop: onRetryDrop,
+        darkSquareStyle: { backgroundColor: boardTheme.dark }, lightSquareStyle: { backgroundColor: boardTheme.light },
+      }
+    : {
+        id: 'review', position: fen, boardOrientation: focusColor === 'w' ? 'white' : 'black',
+        arrows, squareStyles, allowDragging: false, showNotation: true, showAnimations: true,
+        darkSquareStyle: { backgroundColor: boardTheme.dark }, lightSquareStyle: { backgroundColor: boardTheme.light },
+      };
 
   return (
     <main className="review-view">
@@ -95,7 +136,15 @@ export default function Review() {
           <EvalBar evalWhite={evalWhite} orientation={focusColor === 'w' ? 'white' : 'black'} />
           <div className="board"><Chessboard options={boardOptions} /></div>
         </div>
-        {analysis && <EvalGraph series={analysis.evalSeries} selectedPly={selectedPly} onSelect={go} />}
+        {retry && (
+          <div className={`retry-bar ${retryStatus}`}>
+            {retryStatus === 'idle' && <span>{t('review.retryPrompt')}</span>}
+            {retryStatus === 'correct' && <span><FaCircleCheck /> {t('review.retryCorrect')}</span>}
+            {retryStatus === 'wrong' && <span><FaCircleXmark /> {t('review.retryWrong')}</span>}
+            <button className="retry-exit" onClick={exitRetry}>{t('review.exitRetry')}</button>
+          </div>
+        )}
+        {analysis && !retry && <EvalGraph series={analysis.evalSeries} selectedPly={selectedPly} onSelect={go} />}
         <div className="nav">
           <button onClick={() => go(-1)} title={t('review.navStart')}><FaAnglesLeft /></button>
           <button onClick={() => go(selectedPly - 1)} title={t('review.navPrev')}><FaAngleLeft /></button>
@@ -113,25 +162,27 @@ export default function Review() {
           </div>
         ) : (
           <>
-            <div className="side-head">
-              <div className="acc-cards">
-                <div className={`acc ${focusColor === 'w' ? 'focus' : ''}`}>
-                  <div className="acc-val">{analysis.accuracyWhite.toFixed(1)}%</div>
-                  <div className="acc-lbl">{analysis.game.white}</div>
-                </div>
-                <div className={`acc ${focusColor === 'b' ? 'focus' : ''}`}>
-                  <div className="acc-val">{analysis.accuracyBlack.toFixed(1)}%</div>
-                  <div className="acc-lbl">{analysis.game.black}</div>
-                </div>
+            <Takeaway analysis={analysis} focusColor={focusColor} />
+            <div className="acc-cards">
+              <div className={`acc ${focusColor === 'w' ? 'focus' : ''}`}>
+                <div className="acc-val">{analysis.accuracyWhite.toFixed(1)}%</div>
+                <div className="acc-lbl">{analysis.game.white}</div>
               </div>
-              <ShareButton pgn={analysis.game.pgn} side={focusColor} />
+              <div className={`acc ${focusColor === 'b' ? 'focus' : ''}`}>
+                <div className="acc-val">{analysis.accuracyBlack.toFixed(1)}%</div>
+                <div className="acc-lbl">{analysis.game.black}</div>
+              </div>
             </div>
 
             <StatsPanel analysis={analysis} selectedPly={selectedPly} focusColor={focusColor} />
             <CoachCard node={node} />
+            {canRetry && !retry && (
+              <button className="try-better" onClick={startRetry}><FaDumbbell /> {t('review.tryBetter')}</button>
+            )}
             <EngineLines fen={node ? node.fenBefore : START_FEN} />
             <ComparePanel node={node} />
             <CriticalMoments moves={analysis.moves} focusColor={focusColor} onSelect={go} selectedPly={selectedPly} />
+            <ExportMenu analysis={analysis} focusColor={focusColor} currentFen={fen} />
             <MoveList moves={analysis.moves} selectedPly={selectedPly} onSelect={go} />
 
             <div className="re-analyze">
