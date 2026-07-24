@@ -122,29 +122,53 @@ export default function Review() {
         darkSquareStyle: { backgroundColor: boardTheme.dark }, lightSquareStyle: { backgroundColor: boardTheme.light },
       };
 
+  if (analyzing) {
+    return (
+      <main className="review-view analyzing">
+        <div className="loading">
+          <div className="spinner" />
+          <p>{engineStatus === 'loading' ? t('review.loadingEngine') : t('review.analyzing', { pct: loadingPct })}</p>
+          <div className="progress"><div className="progress-fill" style={{ width: `${loadingPct}%` }} /></div>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main className="review-view">
-      <div className="board-col">
-        <button className="back-btn" onClick={() => navigate('/')}><FaArrowLeftLong /> {t('review.back')}</button>
-        {analysis && (
-          <div className="game-head">
-            <span className="gh-players">{analysis.game.white} {t('review.vs')} {analysis.game.black}</span>
-            {analysis.game.opening && <span className="gh-opening">{analysis.game.opening}</span>}
-          </div>
+    <main className="review-view three-col">
+      {/* LEFT — everything about the current move */}
+      <aside className="col-current">
+        <div className="col-title">{t('review.thisMove')}</div>
+        <StatsPanel analysis={analysis} selectedPly={selectedPly} focusColor={focusColor} />
+        <CoachCard node={node} />
+        {canRetry && !retry && (
+          <button className="try-better" onClick={startRetry}><FaDumbbell /> {t('review.tryBetter')}</button>
         )}
+        <EngineLines fen={node ? node.fenBefore : START_FEN} />
+        <ComparePanel node={node} />
+      </aside>
+
+      {/* CENTER — the board */}
+      <div className="col-board">
+        <button className="back-btn" onClick={() => navigate('/')}><FaArrowLeftLong /> {t('review.back')}</button>
+        <div className="game-head">
+          <span className="gh-players">{analysis.game.white} {t('review.vs')} {analysis.game.black}</span>
+          {analysis.game.opening && <span className="gh-opening">{analysis.game.opening}</span>}
+        </div>
         <div className="board-wrap">
           <EvalBar evalWhite={evalWhite} orientation={focusColor === 'w' ? 'white' : 'black'} />
           <div className="board"><Chessboard options={boardOptions} /></div>
         </div>
-        {retry && (
+        {retry ? (
           <div className={`retry-bar ${retryStatus}`}>
             {retryStatus === 'idle' && <span>{t('review.retryPrompt')}</span>}
             {retryStatus === 'correct' && <span><FaCircleCheck /> {t('review.retryCorrect')}</span>}
             {retryStatus === 'wrong' && <span><FaCircleXmark /> {t('review.retryWrong')}</span>}
             <button className="retry-exit" onClick={exitRetry}>{t('review.exitRetry')}</button>
           </div>
+        ) : (
+          <EvalGraph series={analysis.evalSeries} selectedPly={selectedPly} onSelect={go} />
         )}
-        {analysis && !retry && <EvalGraph series={analysis.evalSeries} selectedPly={selectedPly} onSelect={go} />}
         <div className="nav">
           <button onClick={() => go(-1)} title={t('review.navStart')}><FaAnglesLeft /></button>
           <button onClick={() => go(selectedPly - 1)} title={t('review.navPrev')}><FaAngleLeft /></button>
@@ -153,46 +177,29 @@ export default function Review() {
         </div>
       </div>
 
-      <div className="side-col">
-        {analyzing ? (
-          <div className="loading">
-            <div className="spinner" />
-            <p>{engineStatus === 'loading' ? t('review.loadingEngine') : t('review.analyzing', { pct: loadingPct })}</p>
-            <div className="progress"><div className="progress-fill" style={{ width: `${loadingPct}%` }} /></div>
+      {/* RIGHT — the whole game */}
+      <aside className="col-full">
+        <div className="col-title">{t('review.wholeGame')}</div>
+        <Takeaway analysis={analysis} focusColor={focusColor} />
+        <div className="acc-cards">
+          <div className={`acc ${focusColor === 'w' ? 'focus' : ''}`}>
+            <div className="acc-val">{analysis.accuracyWhite.toFixed(1)}%</div>
+            <div className="acc-lbl">{analysis.game.white}</div>
           </div>
-        ) : (
-          <>
-            <Takeaway analysis={analysis} focusColor={focusColor} />
-            <div className="acc-cards">
-              <div className={`acc ${focusColor === 'w' ? 'focus' : ''}`}>
-                <div className="acc-val">{analysis.accuracyWhite.toFixed(1)}%</div>
-                <div className="acc-lbl">{analysis.game.white}</div>
-              </div>
-              <div className={`acc ${focusColor === 'b' ? 'focus' : ''}`}>
-                <div className="acc-val">{analysis.accuracyBlack.toFixed(1)}%</div>
-                <div className="acc-lbl">{analysis.game.black}</div>
-              </div>
-            </div>
-
-            <StatsPanel analysis={analysis} selectedPly={selectedPly} focusColor={focusColor} />
-            <CoachCard node={node} />
-            {canRetry && !retry && (
-              <button className="try-better" onClick={startRetry}><FaDumbbell /> {t('review.tryBetter')}</button>
-            )}
-            <EngineLines fen={node ? node.fenBefore : START_FEN} />
-            <ComparePanel node={node} />
-            <CriticalMoments moves={analysis.moves} focusColor={focusColor} onSelect={go} selectedPly={selectedPly} />
-            <ExportMenu analysis={analysis} focusColor={focusColor} currentFen={fen} />
-            <MoveList moves={analysis.moves} selectedPly={selectedPly} onSelect={go} />
-
-            <div className="re-analyze">
-              <button onClick={() => runAnalysis(analysis.game, focusColor === 'w' ? 'b' : 'w')}>
-                {t('review.analyzeFromSide', { side: focusColor === 'w' ? t('review.sideBlack') : t('review.sideWhite') })}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+          <div className={`acc ${focusColor === 'b' ? 'focus' : ''}`}>
+            <div className="acc-val">{analysis.accuracyBlack.toFixed(1)}%</div>
+            <div className="acc-lbl">{analysis.game.black}</div>
+          </div>
+        </div>
+        <CriticalMoments moves={analysis.moves} focusColor={focusColor} onSelect={go} selectedPly={selectedPly} />
+        <MoveList moves={analysis.moves} selectedPly={selectedPly} onSelect={go} />
+        <ExportMenu analysis={analysis} focusColor={focusColor} currentFen={fen} />
+        <div className="re-analyze">
+          <button onClick={() => runAnalysis(analysis.game, focusColor === 'w' ? 'b' : 'w')}>
+            {t('review.analyzeFromSide', { side: focusColor === 'w' ? t('review.sideBlack') : t('review.sideWhite') })}
+          </button>
+        </div>
+      </aside>
     </main>
   );
 }

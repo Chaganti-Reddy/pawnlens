@@ -120,6 +120,25 @@
   display: grid; grid-template-columns: minmax(320px, 1fr) minmax(300px, 420px);
   gap: 24px; padding: 24px; max-width: 1200px; margin: 0 auto; align-items: start;
 }
+
+/* three-column: current move | board | whole game */
+.review-view.three-col {
+  grid-template-columns: minmax(290px, 340px) minmax(360px, 1fr) minmax(290px, 350px);
+  max-width: 1500px;
+}
+.review-view.analyzing { display: block; }
+.col-current, .col-full {
+  display: flex; flex-direction: column; gap: 12px;
+  position: sticky; top: 72px; max-height: calc(100vh - 92px); overflow-y: auto; padding-right: 3px;
+}
+.col-board { display: flex; flex-direction: column; gap: 12px; }
+.col-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); font-weight: 700; }
+
+@media (max-width: 1180px) {
+  .review-view.three-col { grid-template-columns: 1fr; max-width: 640px; }
+  .col-current, .col-full { position: static; max-height: none; overflow: visible; }
+  .col-board { order: -1; }
+}
 .board-col { display: flex; flex-direction: column; gap: 12px; }
 .board-wrap { display: flex; gap: 10px; }
 .board { flex: 1; min-width: 0; }

@@ -78,6 +78,8 @@
     "navNext": "Next (→)",
     "navEnd": "End (End)",
     "evalGraphHint": "Click to jump to a move",
+    "thisMove": "This move",
+    "wholeGame": "Whole game",
     "winNow": "Win chance now",
     "runningAccuracy": "Accuracy so far",
     "startPos": "Starting position",
