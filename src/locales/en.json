@@ -48,7 +48,13 @@
     "depthBalanced": "Balanced",
     "depthDeep": "Deep",
     "howManyGames": "How many recent games",
-    "errorPgn": "Paste a valid PGN first."
+    "errorPgn": "Paste a valid PGN first.",
+    "filterAllResults": "All results",
+    "filterWins": "Wins",
+    "filterLosses": "Losses",
+    "filterDraws": "Draws",
+    "filterAllTimes": "All time controls",
+    "filterAllOpenings": "All openings"
   },
   "gamecard": {
     "review": "Review"
@@ -81,7 +87,31 @@
     "criticalMoments": "Turning points",
     "engineLines": "Engine's top moves",
     "share": "Share",
-    "linkCopied": "Link copied!"
+    "linkCopied": "Link copied!",
+    "export": "Export",
+    "tryBetter": "Try the better move",
+    "retryPrompt": "Your move — play the best one.",
+    "retryCorrect": "Yes! That's the move.",
+    "retryWrong": "Not the best — try again.",
+    "exitRetry": "Exit"
+  },
+  "export": {
+    "pgn": "Annotated PGN",
+    "fen": "Copy FEN",
+    "copied": "Copied!"
+  },
+  "takeaway": {
+    "clean": "A clean game — no major mistakes. Keep it up!",
+    "one": "Main lesson: {{lesson}}",
+    "phase": " (mostly in the {{phase}})"
+  },
+  "lesson": {
+    "hung-piece": "watch for pieces you leave undefended",
+    "allowed-mate": "keep your king safe — you allowed mating attacks",
+    "tactic-allowed": "check for opponent tactics before you move",
+    "bad-trade": "think twice before trading — some trades favour the opponent",
+    "missed-better-move": "slow down on key moves — you missed stronger ones",
+    "positional-drift": "small inaccuracies added up over the game"
   },
   "train": {
     "empty1": "No puzzles yet.",
@@ -115,7 +145,9 @@
     "trend": "Accuracy trend",
     "trendFoot": "across your last {{count}} analyzed games",
     "worstOpenings": "Openings to work on",
-    "gamesCount": "{{count}} games"
+    "gamesCount": "{{count}} games",
+    "heatmap": "When you slip",
+    "heatmapFoot": "mistakes by move number"
   },
   "errors": {
     "network": "Can't reach the network. Check your connection and try again.",
