@@ -93,12 +93,15 @@
     "wholeGame": "Whole game",
     "winNow": "Win chance now",
     "runningAccuracy": "Accuracy so far",
+    "ratingApprox": "≈ a rough performance level from accuracy — not a real rating",
     "startPos": "Starting position",
     "movePos": "Move {{n}} of {{total}}",
     "phaseAccuracy": "By phase",
     "overall": "overall",
     "criticalMoments": "Turning points",
     "engineLines": "Engine's top moves",
+    "deeper": "Go deeper",
+    "mastersWin": "White score in master games",
     "share": "Share",
     "linkCopied": "Link copied!",
     "export": "Export",
@@ -141,7 +144,14 @@
     "reveal": "Reveal",
     "next": "Next",
     "sideWhite": "White",
-    "sideBlack": "Black"
+    "sideBlack": "Black",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "streak": "Streak {{n}}",
+    "best": "Best {{n}}",
+    "drilling": "Drilling: {{name}}",
+    "why": "Why"
   },
   "weakness": {
     "yourUsername": "Your username",
@@ -162,7 +172,8 @@
     "worstOpenings": "Openings to work on",
     "gamesCount": "{{count}} games",
     "heatmap": "When you slip",
-    "heatmapFoot": "mistakes by move number"
+    "heatmapFoot": "mistakes by move number",
+    "drill": "Drill these"
   },
   "errors": {
     "network": "Can't reach the network. Check your connection and try again.",
@@ -234,6 +245,9 @@
     "forkKing": "This lets {{opp}} fork your king and {{piece}} — you'll drop material next move. ",
     "forkTwo": "This runs into {{opp}}, forking two of your pieces. ",
     "forkSaved": "{{best}} would've kept everything defended.",
+    "pin": "This lets {{opp}}, pinning your {{p1}} to your {{p2}}. ",
+    "skewer": "This allows {{opp}}, skewering your {{p1}} — the {{p2}} behind it falls. ",
+    "tacticSaved": "{{best}} would've sidestepped it.",
     "hung": "You left the {{piece}} loose — {{opp}} just takes it. ",
     "hungSaved": "{{best}} kept it protected.",
     "badTrade": "This trade actually helps your opponent — you come out worse. ",

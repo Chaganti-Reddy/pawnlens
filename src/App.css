@@ -243,7 +243,9 @@
 .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
 .dash h3 { margin: 0 0 12px; }
 .dash-cats { display: flex; flex-direction: column; gap: 14px; }
-.cat { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.cat { display: block; width: 100%; text-align: left; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 14px; cursor: pointer; color: var(--text); }
+.cat:hover { border-color: var(--accent); }
+.cat-drill { color: var(--accent); font-weight: 600; margin-left: 6px; }
 .cat-head { display: flex; justify-content: space-between; margin-bottom: 8px; }
 .cat-label { font-weight: 600; }
 .cat-count { color: var(--muted); font-size: 13px; }
@@ -387,7 +389,21 @@
 .mm-bar { flex: 1; height: 7px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
 .mm-bar span { display: block; height: 100%; background: var(--accent2); }
 .mm-share { width: 34px; text-align: right; color: var(--muted); }
+.mm-score { width: 40px; text-align: right; font-weight: 600; color: var(--accent2); }
 .mm-tag { font-size: 11px; color: var(--accent); }
+
+/* engine lines deeper */
+.el-title { display: flex; align-items: center; gap: 8px; }
+.el-depth { color: var(--muted); font-size: 11px; }
+.el-deeper { margin-left: auto; background: none; border: 1px solid var(--line); color: var(--text); border-radius: 5px; padding: 2px 8px; cursor: pointer; font-size: 11px; }
+.el-deeper:hover { border-color: var(--accent2); }
+
+/* train extras */
+.train-drilling { font-size: 13px; color: var(--accent); font-weight: 600; }
+.train-progress { display: flex; justify-content: space-between; align-items: center; }
+.train-streak { color: var(--muted); font-size: 12px; }
+.diff-badge { font-size: 11px; font-weight: 700; color: #14210f; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle; }
+.train-why { display: flex; flex-direction: column; gap: 8px; }
 
 /* settings menu */
 .icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 8px; border-radius: 6px; display: inline-flex; font-size: 16px; }
