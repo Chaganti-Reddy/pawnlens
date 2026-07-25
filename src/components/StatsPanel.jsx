@@ -31,7 +31,7 @@ export default function StatsPanel({ analysis, selectedPly, focusColor }) {
           <div className="sp-win-val">{focusWin.toFixed(0)}%</div>
           <div className="sp-lbl">{t('review.winNow')}</div>
         </div>
-        <div className="sp-acc">
+        <div className="sp-acc" title={t('review.ratingApprox')}>
           <div className="sp-acc-val">{runAcc.toFixed(1)}%</div>
           <div className="sp-lbl">{t('review.runningAccuracy')} · ≈{ratingFromAccuracy(runAcc)}</div>
         </div>

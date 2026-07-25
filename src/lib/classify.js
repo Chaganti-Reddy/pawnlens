@@ -32,10 +32,12 @@ export function gameAccuracy(accuracies) {
   return accuracies.reduce((a, b) => a + b, 0) / accuracies.length;
 }
 
-// Very rough performance-rating gauge from an accuracy %. Deliberately approximate.
+// Rough performance-rating gauge from an accuracy %. Deliberately approximate —
+// tuned so typical club accuracies (~70-85%) land in the ~1400-2100 range rather
+// than being over-generous. Not a real Elo.
 export function ratingFromAccuracy(acc) {
   if (!acc) return 0;
-  return Math.round(Math.max(300, Math.min(2900, (acc - 50) * 40 + 800)));
+  return Math.round(Math.max(250, Math.min(2900, (acc - 52) * 42 + 700)));
 }
 
 export const TAGS = {
