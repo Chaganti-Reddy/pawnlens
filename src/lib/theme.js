@@ -23,3 +23,12 @@ export function getBoardTheme() {
 export function setBoardTheme(key) {
   try { localStorage.setItem(BOARD_KEY, key); } catch { /* quota */ }
 }
+
+// Show legal-move hint dots in the trainer.
+const HINTS_KEY = 'pawnlens.hints';
+export function getHints() {
+  return localStorage.getItem(HINTS_KEY) === 'on';
+}
+export function setHints(on) {
+  try { localStorage.setItem(HINTS_KEY, on ? 'on' : 'off'); } catch { /* quota */ }
+}

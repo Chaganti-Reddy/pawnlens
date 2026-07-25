@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaGear, FaSun, FaMoon, FaVolumeHigh, FaVolumeXmark, FaKeyboard } from '../ui/icons.js';
-import { getTheme, applyTheme, getBoardTheme, setBoardTheme, BOARD_THEMES } from '../lib/theme.js';
+import { FaGear, FaSun, FaMoon, FaVolumeHigh, FaVolumeXmark, FaKeyboard, FaLightbulb } from '../ui/icons.js';
+import { getTheme, applyTheme, BOARD_THEMES, getHints, setHints } from '../lib/theme.js';
 import { isSoundOn, setSoundOn } from '../lib/sound.js';
+import { useReviewer } from '../context/ReviewerContext.jsx';
 import ShortcutsHelp from './ShortcutsHelp.jsx';
 
 export default function SettingsMenu() {
   const { t } = useTranslation();
+  const { boardThemeKey, changeBoardTheme } = useReviewer();
   const [open, setOpen] = useState(false);
   const [help, setHelp] = useState(false);
   const [theme, setTheme] = useState(getTheme());
-  const [board, setBoard] = useState(getBoardTheme());
   const [sound, setSound] = useState(isSoundOn());
+  const [hints, setHintsState] = useState(getHints());
   const ref = useRef(null);
 
   useEffect(() => {
@@ -21,8 +23,9 @@ export default function SettingsMenu() {
   }, []);
 
   const toggleTheme = () => { const next = theme === 'dark' ? 'light' : 'dark'; setTheme(next); applyTheme(next); };
-  const pickBoard = (key) => { setBoard(key); setBoardTheme(key); };
+  const pickBoard = (key) => changeBoardTheme(key);
   const toggleSound = () => { const next = !sound; setSound(next); setSoundOn(next); };
+  const toggleHints = () => { const next = !hints; setHintsState(next); setHints(next); };
 
   return (
     <div className="settings" ref={ref}>
@@ -38,13 +41,16 @@ export default function SettingsMenu() {
             <span>{t('settings.board')}</span>
             <span className="swatches">
               {Object.entries(BOARD_THEMES).map(([key, b]) => (
-                <button key={key} className={`swatch ${board === key ? 'on' : ''}`} title={b.name}
+                <button key={key} className={`swatch ${boardThemeKey === key ? 'on' : ''}`} title={b.name}
                   onClick={() => pickBoard(key)} style={{ background: `linear-gradient(135deg, ${b.light} 50%, ${b.dark} 50%)` }} />
               ))}
             </span>
           </div>
           <button className="settings-row" onClick={toggleSound}>
             {sound ? <FaVolumeHigh /> : <FaVolumeXmark />} {t('settings.sound')}: <b>{sound ? t('settings.on') : t('settings.off')}</b>
+          </button>
+          <button className="settings-row" onClick={toggleHints}>
+            <FaLightbulb /> {t('settings.hints')}: <b>{hints ? t('settings.on') : t('settings.off')}</b>
           </button>
           <button className="settings-row" onClick={() => { setHelp(true); setOpen(false); }}>
             <FaKeyboard /> {t('settings.shortcuts')}

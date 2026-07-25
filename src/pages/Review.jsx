@@ -14,7 +14,7 @@ import CriticalMoments from '../components/CriticalMoments.jsx';
 import EngineLines from '../components/EngineLines.jsx';
 import ExportMenu from '../components/ExportMenu.jsx';
 import Takeaway from '../components/Takeaway.jsx';
-import { getBoardTheme, BOARD_THEMES } from '../lib/theme.js';
+import { BOARD_THEMES } from '../lib/theme.js';
 import { playMove } from '../lib/sound.js';
 import { parseSharedGame } from '../lib/share.js';
 import { FaAngleLeft, FaAngleRight, FaAnglesLeft, FaAnglesRight, FaArrowLeftLong, FaDumbbell, FaCircleCheck, FaCircleXmark } from '../ui/icons.js';
@@ -25,7 +25,7 @@ export default function Review() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [params] = useSearchParams();
-  const { analysis, focusColor, progress, engineStatus, selectedPly, setSelectedPly, runAnalysis, runAnalysisFromPgn } = useReviewer();
+  const { analysis, focusColor, progress, engineStatus, selectedPly, setSelectedPly, runAnalysis, runAnalysisFromPgn, getTopMoves, boardThemeKey } = useReviewer();
 
   // Shared link: decode PGN from the URL and analyze it once.
   const sharedLoaded = useRef(false);
@@ -72,29 +72,46 @@ export default function Review() {
   const node = selectedPly >= 0 && analysis ? analysis.moves[selectedPly] : null;
   const fen = node ? node.fenAfter : START_FEN;
   const evalWhite = node ? node.evalWhite : { cp: 0 };
-  const boardTheme = BOARD_THEMES[getBoardTheme()];
+  const boardTheme = BOARD_THEMES[boardThemeKey];
   const canRetry = node && node.tagKind === 'bad' && node.bestUci;
 
   const startRetry = () => { setRetry(true); setRetryStatus('idle'); setRetryFen(node.fenBefore); };
   const exitRetry = () => { setRetry(false); setRetryStatus('idle'); setRetryFen(null); };
-  const onRetryDrop = ({ sourceSquare, targetSquare }) => {
-    if (retryStatus === 'correct') return false;
-    const baseFen = retryFen || node.fenBefore;
+
+  // Engine plays the opponent's reply so the user can keep playing the line.
+  const engineReply = async (fen) => {
+    setRetryStatus('thinking');
     try {
-      const c = new Chess(baseFen);
-      const mv = c.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
-      if (!mv) return false;
-      const uci = mv.from + mv.to + (mv.promotion || '');
-      if (uci.slice(0, 4) === node.bestUci.slice(0, 4)) {
-        playMove(!!mv.captured);
-        // show the payoff: play the engine's expected reply, if we have it
-        if (node.bestLine?.[1]) { try { c.move(node.bestLine[1]); } catch { /* ignore */ } }
-        setRetryFen(c.fen());
-        setRetryStatus('correct');
-      } else {
-        setRetryStatus('wrong');
+      const lines = await getTopMoves(fen, 1);
+      const uci = lines?.[0]?.pv?.[0];
+      const c = new Chess(fen);
+      if (uci) {
+        const mv = c.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] || 'q' });
+        if (mv) playMove(!!mv.captured);
       }
-    } catch { /* illegal */ }
+      setRetryFen(c.fen());
+    } catch { /* ignore */ }
+    setRetryStatus('playing');
+  };
+
+  const onRetryDrop = ({ sourceSquare, targetSquare }) => {
+    if (retryStatus === 'thinking') return false;
+    const base = retryFen || node.fenBefore;
+    let c, mv;
+    try {
+      c = new Chess(base);
+      mv = c.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+    } catch { return false; }
+    if (!mv) return false;
+    // First move must be the best move (that's the lesson); after that, free play.
+    if (retryStatus === 'idle' || retryStatus === 'wrong') {
+      const uci = mv.from + mv.to + (mv.promotion || '');
+      if (uci.slice(0, 4) !== node.bestUci.slice(0, 4)) { setRetryStatus('wrong'); return false; }
+    }
+    playMove(!!mv.captured);
+    setRetryFen(c.fen());
+    if (c.isGameOver()) { setRetryStatus('playing'); return false; }
+    engineReply(c.fen());
     return false;
   };
 
@@ -112,7 +129,7 @@ export default function Review() {
     ? {
         id: 'review', position: retryFen || node.fenBefore,
         boardOrientation: focusColor === 'w' ? 'white' : 'black',
-        allowDragging: retryStatus !== 'correct', showNotation: true, showAnimations: true,
+        allowDragging: retryStatus !== 'thinking', showNotation: true, showAnimations: true,
         onPieceDrop: onRetryDrop,
         darkSquareStyle: { backgroundColor: boardTheme.dark }, lightSquareStyle: { backgroundColor: boardTheme.light },
       }
@@ -162,8 +179,9 @@ export default function Review() {
         {retry ? (
           <div className={`retry-bar ${retryStatus}`}>
             {retryStatus === 'idle' && <span>{t('review.retryPrompt')}</span>}
-            {retryStatus === 'correct' && <span><FaCircleCheck /> {t('review.retryCorrect')}</span>}
             {retryStatus === 'wrong' && <span><FaCircleXmark /> {t('review.retryWrong')}</span>}
+            {retryStatus === 'thinking' && <span><span className="mini-spin" /> {t('review.retryThinking')}</span>}
+            {retryStatus === 'playing' && <span><FaCircleCheck /> {t('review.retryPlaying')}</span>}
             <button className="retry-exit" onClick={exitRetry}>{t('review.exitRetry')}</button>
           </div>
         ) : (
