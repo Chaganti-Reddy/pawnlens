@@ -115,6 +115,8 @@ export function collectPuzzles(playerName) {
   for (const g of games) {
     for (const bm of g.badMoves || []) {
       if (!bm.fen || !bm.solution) continue;
+      const delta = bm.delta || 0;
+      const difficulty = delta >= 30 ? 'easy' : delta >= 15 ? 'medium' : 'hard';
       puzzles.push({
         id: `${g.id}#${bm.ply}`,
         fen: bm.fen,
@@ -122,6 +124,8 @@ export function collectPuzzles(playerName) {
         solutionSan: bm.solutionSan,
         bestLine: bm.bestLine,
         note: bm.note,
+        category: bm.category || 'positional-drift',
+        difficulty,
         sideToMove: g.focusColor,
         from: `${g.white} vs ${g.black}`,
         opening: g.opening,

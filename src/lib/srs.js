@@ -40,6 +40,17 @@ export function review(id, correct) {
   return s;
 }
 
+const STREAK_KEY = 'pawnlens.beststreak';
+export function bestStreak() {
+  try { return Number(localStorage.getItem(STREAK_KEY) || 0); } catch { return 0; }
+}
+export function recordStreak(current) {
+  if (current > bestStreak()) {
+    try { localStorage.setItem(STREAK_KEY, String(current)); } catch { /* quota */ }
+  }
+  return bestStreak();
+}
+
 export function stats(puzzles) {
   const map = load();
   const now = Date.now();
