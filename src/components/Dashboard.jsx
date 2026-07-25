@@ -1,8 +1,10 @@
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 // Cross-game weakness report — the thing single-game reviewers don't give you.
 export default function Dashboard({ data, playerName }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   if (!data) {
     return (
       <div className="dash empty">
@@ -24,10 +26,10 @@ export default function Dashboard({ data, playerName }) {
       <h3>{t('weakness.recurring')}</h3>
       <div className="dash-cats">
         {data.topCategories.map((c) => (
-          <div className="cat" key={c.cat}>
+          <button className="cat" key={c.cat} onClick={() => navigate(`/train?cat=${encodeURIComponent(c.cat)}`)} title={t('weakness.drill')}>
             <div className="cat-head">
               <span className="cat-label">{t(`category.${c.cat}`)}</span>
-              <span className="cat-count">{c.count} ({c.pct}%)</span>
+              <span className="cat-count">{c.count} ({c.pct}%) <span className="cat-drill">{t('weakness.drill')} →</span></span>
             </div>
             <div className="cat-bar">
               <div className="cat-bar-fill" style={{ width: `${c.pct}%` }} />
@@ -35,7 +37,7 @@ export default function Dashboard({ data, playerName }) {
             {c.example && (
               <div className="cat-example">{t('weakness.eg')} {c.example.san}: {c.example.note}</div>
             )}
-          </div>
+          </button>
         ))}
       </div>
     </div>
