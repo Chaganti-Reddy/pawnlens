@@ -14,12 +14,13 @@ export default function EngineLines({ fen }) {
   const { t } = useTranslation();
   const { getTopMoves } = useReviewer();
   const [lines, setLines] = useState(null);
+  const [depth, setDepth] = useState(12);
 
   useEffect(() => {
     if (!fen) return;
     let alive = true;
     setLines(null);
-    getTopMoves(fen, 3).then((res) => {
+    getTopMoves(fen, 3, depth).then((res) => {
       if (!alive) return;
       const out = res
         .filter((l) => l.pv?.length)
@@ -35,11 +36,19 @@ export default function EngineLines({ fen }) {
       setLines(out);
     });
     return () => { alive = false; };
-  }, [fen, getTopMoves]);
+  }, [fen, depth, getTopMoves]);
+
+  // Reset to shallow depth whenever the position changes.
+  useEffect(() => { setDepth(12); }, [fen]);
 
   return (
     <div className="engine-lines">
-      <div className="el-title">{t('review.engineLines')}</div>
+      <div className="el-title">
+        {t('review.engineLines')} <span className="el-depth">d{depth}</span>
+        {depth < 18 && lines && (
+          <button className="el-deeper" onClick={() => setDepth(18)}>{t('review.deeper')}</button>
+        )}
+      </div>
       {!lines ? (
         <span className="muted">…</span>
       ) : (

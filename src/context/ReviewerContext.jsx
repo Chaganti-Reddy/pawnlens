@@ -48,9 +48,9 @@ export function ReviewerProvider({ children }) {
   }, [ensureEngine]);
 
   // Lazy: top N engine moves for a single position (for the review "engine lines").
-  const getTopMoves = useCallback(async (fen, n = 3) => {
+  const getTopMoves = useCallback(async (fen, n = 3, d = 12) => {
     const eng = await ensureEngine();
-    const r = await eng.analyze(fen, { depth: 12, multipv: n });
+    const r = await eng.analyze(fen, { depth: d, multipv: n });
     return r.lines;
   }, [ensureEngine]);
 

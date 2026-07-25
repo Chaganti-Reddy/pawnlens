@@ -41,6 +41,7 @@ export default function ComparePanel({ node }) {
                     <span className="mm-san">{m.san}</span>
                     <span className="mm-bar"><span style={{ width: `${m.share}%` }} /></span>
                     <span className="mm-share">{m.share}%</span>
+                    <span className="mm-score" title={t('review.mastersWin')}>{m.whiteScore}%</span>
                     {m.san === playedSan && <span className="mm-tag">{t('review.yourMove')}</span>}
                   </li>
                 ))}
