@@ -20,3 +20,20 @@ export function gameTakeaway(analysis, focusColor) {
 
   return t('takeaway.one', { lesson: t(`lesson.${topCat}`) }) + phaseClause;
 }
+
+// Explain the engine's recommended plan in words, from the best line's SAN.
+export function bestPlanText(node) {
+  const t = (k, o) => i18n.t(k, o);
+  const line = node?.bestLine || [];
+  if (!line.length) return '';
+  const first = line[0];
+  let key = 'ideaPawn';
+  if (first.startsWith('O-O')) key = 'ideaCastle';
+  else if (first.includes('#')) key = 'ideaMate';
+  else if (first.includes('+')) key = 'ideaCheck';
+  else if (first.includes('x')) key = 'ideaCapture';
+  else if (/^[NBRQK]/.test(first)) key = 'ideaDevelop';
+  let s = t('plan.sentence', { move: first, idea: t(`plan.${key}`) });
+  if (line.length > 1) s += t('plan.cont', { line: line.join(' ') });
+  return s;
+}

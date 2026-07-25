@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaChevronDown, FaCrown } from '../ui/icons.js';
 import { mastersForFen } from '../lib/masters.js';
+import { bestPlanText } from '../lib/lessons.js';
 
 // "How the strong players handle this." Masters data when the position is known,
 // otherwise the engine's line. Collapsible, framed as a nudge — never a scolding.
@@ -48,7 +49,7 @@ export default function ComparePanel({ node }) {
           )}
           {masters === null && (
             <>
-              <p className="muted">{t('review.enginePlanIntro')}</p>
+              <p className="plan-text">{bestPlanText(node)}</p>
               <div className="best-line inline">
                 {node.bestLine?.length ? node.bestLine.map((san, i) => <span className="bl-move" key={i}>{san}</span>) : <span className="muted">—</span>}
               </div>
