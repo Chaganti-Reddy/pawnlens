@@ -490,6 +490,10 @@
 .train-actions .primary, .train-actions .ghost { flex: 1; justify-content: center; text-align: center; }
 .train-note { font-size: 13px; color: var(--muted); line-height: 1.5; }
 
+/* mini spinner (retry thinking) + plan text */
+.mini-spin { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+.plan-text { margin: 8px 0; font-size: 13px; line-height: 1.5; color: var(--text); }
+
 /* takeaway */
 .takeaway {
   display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;

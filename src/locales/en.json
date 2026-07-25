@@ -23,7 +23,18 @@
     "sound": "Sound",
     "on": "On",
     "off": "Off",
+    "hints": "Move hints",
     "shortcuts": "Keyboard shortcuts"
+  },
+  "plan": {
+    "sentence": "{{move}} — {{idea}}.",
+    "cont": " A likely continuation: {{line}}.",
+    "ideaCastle": "get the king safe and connect the rooks",
+    "ideaMate": "this forces mate",
+    "ideaCheck": "check the king and seize the initiative",
+    "ideaCapture": "win material",
+    "ideaDevelop": "activate a piece and improve the position",
+    "ideaPawn": "grab space and fix the pawn structure"
   },
   "shortcuts": {
     "prevNext": "Previous / next move",
@@ -95,6 +106,8 @@
     "retryPrompt": "Your move — play the best one.",
     "retryCorrect": "Yes! That's the move.",
     "retryWrong": "Not the best — try again.",
+    "retryThinking": "Engine thinking…",
+    "retryPlaying": "Nice — now play it out. Engine replies each move.",
     "exitRetry": "Exit"
   },
   "export": {
