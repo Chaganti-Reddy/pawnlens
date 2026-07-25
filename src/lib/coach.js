@@ -50,6 +50,41 @@ function isBackRank(square, defenderColor) {
   return defenderColor === 'w' ? square[1] === '1' : square[1] === '8';
 }
 
+const ROOK_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const BISHOP_DIRS = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+
+// Ray scan from a sliding piece's square: is an enemy piece pinned or skewered?
+function detectLine(chess, fromSquare, pieceType) {
+  if (!['b', 'r', 'q'].includes(pieceType)) return null;
+  const dirs = pieceType === 'r' ? ROOK_DIRS : pieceType === 'b' ? BISHOP_DIRS : [...ROOK_DIRS, ...BISHOP_DIRS];
+  const fx = fromSquare.charCodeAt(0) - 97;
+  const fy = Number(fromSquare[1]) - 1;
+  const mover = chess.get(fromSquare)?.color;
+  if (!mover) return null;
+  try {
+    for (const [dx, dy] of dirs) {
+      const found = [];
+      let x = fx + dx, y = fy + dy;
+      while (x >= 0 && x < 8 && y >= 0 && y < 8) {
+        const sq = String.fromCharCode(97 + x) + (y + 1);
+        const p = chess.get(sq);
+        if (p) {
+          found.push(p);
+          if (found.length === 2) break;
+        }
+        x += dx; y += dy;
+      }
+      if (found.length < 2) continue;
+      const [p1, p2] = found;
+      if (p1.color === mover || p2.color === mover) continue; // both must be the defender's
+      const v1 = PIECE_VALUE[p1.type], v2 = PIECE_VALUE[p2.type];
+      if (p2.type === 'k' || v2 > v1) return { motif: 'pin', p1: p1.type, p2: p2.type };
+      if (p1.type === 'k' || v1 > v2) return { motif: 'skewer', p1: p1.type, p2: p2.type };
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 export function coachNote(args) {
   const { tag, delta, playedMove, fenBefore, fenAfter, bestUci, evalAfter, moverColor, bestLine } = args;
   const best = playMove(fenBefore, bestUci);
@@ -80,6 +115,11 @@ export function coachNote(args) {
       ? t('coach.forkKing', { opp: oppBest.san, piece: pieceName(f.targets[0] || 'n') })
       : t('coach.forkTwo', { opp: oppBest.san });
     if (bestSan) text += t('coach.forkSaved', { best: bestSan });
+    category = 'tactic-allowed';
+  } else if (oppBest?.chess && detectLine(oppBest.chess, oppBest.to, oppBest.piece)) {
+    const m = detectLine(oppBest.chess, oppBest.to, oppBest.piece);
+    text = t(`coach.${m.motif}`, { opp: oppBest.san, p1: pieceName(m.p1), p2: pieceName(m.p2) });
+    if (bestSan) text += t('coach.tacticSaved', { best: bestSan });
     category = 'tactic-allowed';
   } else if (oppBest?.captured && (PIECE_VALUE[oppBest.captured] || 0) >= 3) {
     text = t('coach.hung', { piece: pieceName(oppBest.captured), opp: oppBest.san });
