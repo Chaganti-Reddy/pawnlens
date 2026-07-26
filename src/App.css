@@ -256,7 +256,7 @@
 /* ---- brand + engine status ---- */
 .brand { cursor: pointer; }
 .brand-name { font-size: 20px; font-weight: 700; }
-.topnav { display: flex; align-items: center; gap: 4px; }
+.topnav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 .engine-dot { width: 9px; height: 9px; border-radius: 50%; margin-left: 8px; }
 .engine-dot.loading { background: #e6c14b; animation: pulse 1s infinite; }
 .engine-dot.ready { background: var(--accent); }
@@ -567,9 +567,49 @@
 .hm-label { font-size: 11px; color: var(--muted); }
 .heatmap-foot { font-size: 12px; color: var(--muted); margin-top: 8px; }
 
+/* drills */
+.drills-view { max-width: 900px; margin: 0 auto; padding: 24px 20px; }
+.drills-view h2 { margin: 0 0 6px; }
+.drill-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 18px; }
+.drill-card { display: flex; flex-direction: column; gap: 6px; text-align: left; background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 18px; cursor: pointer; color: var(--text); }
+.drill-card:hover { border-color: var(--accent); }
+.drill-card-title { font-weight: 700; font-size: 16px; }
+.drill-card-desc { font-size: 13px; color: var(--muted); }
+.drill-title { margin: 8px 0 2px; }
+.drill-desc { margin: 0 0 16px; }
+.drill-run { display: grid; grid-template-columns: minmax(280px, 460px) 1fr; gap: 24px; align-items: start; }
+.drill-run.color-drill { grid-template-columns: 1fr; }
+.drill-panel { display: flex; flex-direction: column; gap: 16px; }
+.drill-panel.wide { max-width: 420px; margin: 0 auto; text-align: center; }
+.drill-score { display: flex; gap: 14px; align-items: center; font-size: 14px; }
+.drill-score .ds-ok { color: var(--accent); font-weight: 700; }
+.drill-score .ds-miss { color: var(--muted); }
+.drill-cue { font-size: 20px; }
+.drill-cue b { font-size: 26px; color: var(--accent); }
+.color-cue { font-size: 64px; font-weight: 800; text-align: center; padding: 20px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--line); }
+.color-cue.ok { border-color: var(--accent); }
+.color-cue.bad { border-color: var(--bad); }
+.color-btns { display: flex; gap: 12px; }
+.color-btns button { flex: 1; padding: 16px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 700; border: 1px solid var(--line); }
+.light-btn { background: #e9edcc; color: #262421; }
+.dark-btn { background: #6b8f5e; color: #fff; }
+.drill-start { display: flex; flex-direction: column; gap: 16px; align-items: center; padding: 20px; }
+.drill-result { text-align: center; }
+.dr-icon { font-size: 34px; color: var(--accent); }
+.dr-score { font-size: 44px; font-weight: 800; }
+
+/* openings drill */
+.opening-book { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.ob-title { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.ob-row { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; }
+.ob-hidden { color: var(--muted); font-style: italic; }
+.opening-info { font-size: 13px; color: var(--accent); }
+.ol-line { display: flex; flex-wrap: wrap; gap: 6px; }
+
 @media (max-width: 780px) {
   .review-view { grid-template-columns: 1fr; }
   .train-view { grid-template-columns: 1fr; }
+  .drill-run { grid-template-columns: 1fr; }
   .dash-stats { grid-template-columns: repeat(2, 1fr); }
   .tagline { display: none; }
 }

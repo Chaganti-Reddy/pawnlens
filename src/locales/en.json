@@ -7,6 +7,8 @@
     "newReview": "New review",
     "review": "Review",
     "train": "Train",
+    "drills": "Drills",
+    "openings": "Openings",
     "weaknesses": "My weaknesses",
     "engineReady": "Engine ready",
     "engineLoading": "Loading engine…"
@@ -186,6 +188,38 @@
     "notFound": "No {{site}} player called \"{{name}}\". Check the spelling.",
     "noGames": "\"{{name}}\" has no public games on {{site}} yet.",
     "noRecent": "Couldn't find recent games for \"{{name}}\"."
+  },
+  "drills": {
+    "heading": "Skill drills",
+    "sub": "Quick board-skill workouts. Sharpen the basics that make calculation faster.",
+    "back": "All drills",
+    "start": "Start",
+    "again": "Go again",
+    "score": "{{n}} right",
+    "miss": "{{n}} missed",
+    "solvedIn": "in {{round}}s",
+    "clickSquare": "Click",
+    "light": "Light",
+    "dark": "Dark",
+    "knightCue": "Click every square the knight attacks ({{found}}/{{total}})",
+    "coordinateTitle": "Coordinate trainer",
+    "coordinateDesc": "Find named squares fast, from both sides of the board.",
+    "colorTitle": "Square colour",
+    "colorDesc": "Is the square light or dark? Train instant recognition.",
+    "knightTitle": "Knight sight",
+    "knightDesc": "Spot every square a knight attacks."
+  },
+  "openings": {
+    "title": "Openings drill",
+    "sub": "Play the moves strong players actually choose. Build a book from real master games.",
+    "bookMoves": "Book has moves here",
+    "hidden": "book move",
+    "played": "You played {{move}} — masters pick it {{share}}% of the time.",
+    "notBook": "Not a book move — try a main line.",
+    "outOfBook": "Out of book — you've reached fresh territory. Well done!",
+    "restart": "Restart",
+    "line": "Your line",
+    "title2": "Openings"
   },
   "footer": {
     "attribution": "Analysis by Stockfish.js (GPLv3).",
