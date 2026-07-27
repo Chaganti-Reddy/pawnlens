@@ -174,8 +174,12 @@
     "worstOpenings": "Openings to work on",
     "gamesCount": "{{count}} games",
     "heatmap": "When you slip",
-    "heatmapFoot": "mistakes by move number",
-    "drill": "Drill these"
+    "heatmapFoot": "mistakes by move number — tap a bar to see them",
+    "drill": "Drill these",
+    "vs": "vs",
+    "atMove": "move {{n}}",
+    "reviewMove": "Review this move",
+    "bucketMistakes": "Mistakes on moves {{range}}"
   },
   "errors": {
     "network": "Can't reach the network. Check your connection and try again.",
@@ -210,16 +214,21 @@
     "knightDesc": "Spot every square a knight attacks."
   },
   "openings": {
-    "title": "Openings drill",
-    "sub": "Play the moves strong players actually choose. Build a book from real master games.",
-    "bookMoves": "Book has moves here",
-    "hidden": "book move",
-    "played": "You played {{move}} — masters pick it {{share}}% of the time.",
-    "notBook": "Not a book move — try a main line.",
-    "outOfBook": "Out of book — you've reached fresh territory. Well done!",
+    "title": "Openings trainer",
+    "sub2": "Learn any of {{count}} named openings, move by move. Search one, drill your own, or get a random line.",
+    "search": "Search openings (e.g. Sicilian, Ruy Lopez, C50)…",
+    "random": "Random",
+    "fromGames": "From your games",
+    "noMatch": "No opening matches that.",
+    "back": "All openings",
+    "playLine": "Play the line from memory — every move.",
+    "moveOf": "Move {{n}} of {{total}}",
+    "wrongMove": "Not this line — try the book move.",
+    "correctLine": "Line complete — nicely done!",
+    "showNext": "Show next move",
+    "nextIs": "Next: {{move}}",
     "restart": "Restart",
-    "line": "Your line",
-    "title2": "Openings"
+    "line": "The line"
   },
   "footer": {
     "attribution": "Analysis by Stockfish.js (GPLv3).",
