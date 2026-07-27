@@ -10,9 +10,10 @@ import { FaTrashCan } from '../ui/icons.js';
 
 export default function Weakness() {
   const { t } = useTranslation();
-  const { history, setHistory, batch, progress } = useReviewer();
+  const { history, setHistory, batch, progress, reviewStoredMove } = useReviewer();
   const [params] = useSearchParams();
   const [dashName, setDashName] = useState(params.get('u') || '');
+  const [bucket, setBucket] = useState(null);
 
   useEffect(() => {
     const u = params.get('u');
@@ -54,7 +55,22 @@ export default function Weakness() {
         </button>
       </div>
       {data && trend.length >= 2 && <AccuracyTrend data={trend} />}
-      {data && <MistakeHeatmap data={heatmap} />}
+      {data && <MistakeHeatmap data={heatmap} selected={bucket} onSelect={setBucket} />}
+      {data && bucket && (
+        <div className="bucket-evidence">
+          <h4>{t('weakness.bucketMistakes', { range: bucket })}</h4>
+          {(heatmap.find((b) => b.label === bucket)?.items || []).map((inst, i) => (
+            <div className="evidence-row" key={i}>
+              <div className="ev-main">
+                <span className="ev-game">{inst.white} {t('weakness.vs')} {inst.black}</span>
+                <span className="ev-move">{t('weakness.atMove', { n: inst.moveNumber })} · {inst.san}</span>
+              </div>
+              <div className="ev-note">{inst.note}</div>
+              {inst.pgn && <button className="ev-review" onClick={() => reviewStoredMove(inst)}>{t('weakness.reviewMove')}</button>}
+            </div>
+          ))}
+        </div>
+      )}
       {data && openings.length > 0 && (
         <div className="openings">
           <h3>{t('weakness.worstOpenings')}</h3>

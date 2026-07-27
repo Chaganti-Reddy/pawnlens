@@ -45,6 +45,7 @@ export function summarize(game, result, focusColor) {
     source: game.source || 'pgn',
     url: game.url || '',
     opening: game.opening || '',
+    pgn: game.pgn || '',
     savedAt: Date.now(),
     focusColor,
     focusName: focusColor === 'w' ? game.white : game.black,
@@ -83,24 +84,47 @@ export function worstOpenings(playerName, minGames = 2) {
     .slice(0, 5);
 }
 
-// Mistakes bucketed by move number — reveals when a player tends to slip.
-export function mistakeHeatmap(playerName) {
+// Flat, enriched list of every stored mistake for a player — each item carries
+// its game context + PGN + ply so the UI can explain and jump straight to it.
+export function mistakeInstances(playerName) {
   const games = loadHistory().filter(
     (g) => (g.focusName || '').toLowerCase() === (playerName || '').toLowerCase()
   );
-  const buckets = [
-    { label: '1–10', min: 1, max: 10, count: 0 },
-    { label: '11–20', min: 11, max: 20, count: 0 },
-    { label: '21–30', min: 21, max: 30, count: 0 },
-    { label: '31–40', min: 31, max: 40, count: 0 },
-    { label: '41+', min: 41, max: Infinity, count: 0 },
-  ];
+  const out = [];
   for (const g of games) {
     for (const bm of g.badMoves || []) {
-      const moveNo = Math.floor(bm.ply / 2) + 1;
-      const b = buckets.find((x) => moveNo >= x.min && moveNo <= x.max);
-      if (b) b.count++;
+      out.push({
+        white: g.white,
+        black: g.black,
+        date: g.date,
+        color: g.focusColor,
+        pgn: g.pgn || '',
+        ply: bm.ply,
+        moveNumber: Math.floor(bm.ply / 2) + 1,
+        san: bm.san,
+        tag: bm.tag,
+        category: bm.category || 'positional-drift',
+        phase: bm.phase,
+        delta: bm.delta,
+        note: bm.note,
+      });
     }
+  }
+  return out.sort((a, b) => (b.delta || 0) - (a.delta || 0));
+}
+
+// Mistakes bucketed by move number — reveals when a player tends to slip.
+export function mistakeHeatmap(playerName) {
+  const buckets = [
+    { label: '1–10', min: 1, max: 10, count: 0, items: [] },
+    { label: '11–20', min: 11, max: 20, count: 0, items: [] },
+    { label: '21–30', min: 21, max: 30, count: 0, items: [] },
+    { label: '31–40', min: 31, max: 40, count: 0, items: [] },
+    { label: '41+', min: 41, max: Infinity, count: 0, items: [] },
+  ];
+  for (const inst of mistakeInstances(playerName)) {
+    const b = buckets.find((x) => inst.moveNumber >= x.min && inst.moveNumber <= x.max);
+    if (b) { b.count++; b.items.push(inst); }
   }
   const max = Math.max(1, ...buckets.map((b) => b.count));
   return buckets.map((b) => ({ ...b, pct: Math.round((b.count / max) * 100) }));
@@ -154,22 +178,19 @@ export function aggregateWeaknesses(playerName) {
   );
   if (!games.length) return null;
 
+  const instances = mistakeInstances(playerName);
   const catCounts = {};
   const phaseCounts = { opening: 0, middlegame: 0, endgame: 0 };
-  const examples = {};
-  let totalBad = 0;
+  const byCat = {};
   let accSum = 0;
-
-  for (const g of games) {
-    accSum += g.accuracy || 0;
-    for (const bm of g.badMoves || []) {
-      totalBad++;
-      const cat = bm.category || 'positional-drift';
-      catCounts[cat] = (catCounts[cat] || 0) + 1;
-      phaseCounts[bm.phase] = (phaseCounts[bm.phase] || 0) + 1;
-      if (!examples[cat]) examples[cat] = bm;
-    }
+  for (const g of games) accSum += g.accuracy || 0;
+  for (const inst of instances) {
+    const cat = inst.category;
+    catCounts[cat] = (catCounts[cat] || 0) + 1;
+    phaseCounts[inst.phase] = (phaseCounts[inst.phase] || 0) + 1;
+    (byCat[cat] = byCat[cat] || []).push(inst);
   }
+  const totalBad = instances.length;
 
   const topCategories = Object.entries(catCounts)
     .sort((a, b) => b[1] - a[1])
@@ -177,7 +198,8 @@ export function aggregateWeaknesses(playerName) {
       cat,
       count,
       pct: Math.round((count / totalBad) * 100),
-      example: examples[cat],
+      example: byCat[cat][0],
+      instances: byCat[cat].slice(0, 4), // top few, biggest swing first
     }));
 
   const worstPhase = Object.entries(phaseCounts).sort((a, b) => b[1] - a[1])[0];

@@ -88,12 +88,12 @@ export function ReviewerProvider({ children }) {
     setAnalysis(null);
     setSelectedPly(-1);
     setBatch(null);
+    setProgress({ done: 0, total: 1 });
+    setEngineStatus('loading');
     navigate('/review');
     try {
-      setEngineStatus('loading');
       const eng = await ensureEngine();
       setEngineStatus('ready');
-      setProgress({ done: 0, total: 1 });
       const res = await analyzeGame(game.pgn, { engine: eng, depth, onProgress: (d, t) => setProgress({ done: d, total: t }) });
       res.game = game;
       setAnalysis(res);
@@ -105,8 +105,8 @@ export function ReviewerProvider({ children }) {
     }
   }, [depth, ensureEngine, navigate]);
 
-  // Analyze a raw PGN (used by shared links). Does not navigate.
-  const runAnalysisFromPgn = useCallback(async (pgn, side) => {
+  // Analyze a raw PGN (used by shared links + weakness "review this"). Does not navigate.
+  const runAnalysisFromPgn = useCallback(async (pgn, side, targetPly) => {
     const game = { ...pgnMeta(pgn), source: 'shared' };
     const color = side || game.userColor || 'w';
     setError('');
@@ -114,20 +114,30 @@ export function ReviewerProvider({ children }) {
     setAnalysis(null);
     setSelectedPly(-1);
     setBatch(null);
+    setProgress({ done: 0, total: 1 });
+    setEngineStatus('loading');
     try {
-      setEngineStatus('loading');
       const eng = await ensureEngine();
       setEngineStatus('ready');
-      setProgress({ done: 0, total: 1 });
       const res = await analyzeGame(pgn, { engine: eng, depth, onProgress: (d, t) => setProgress({ done: d, total: t }) });
       res.game = game;
       setAnalysis(res);
-      const firstBad = res.moves.find((m) => m.color === color && m.tagKind === 'bad');
-      setSelectedPly(firstBad ? firstBad.ply : res.moves.length - 1);
+      if (targetPly != null) setSelectedPly(targetPly);
+      else {
+        const firstBad = res.moves.find((m) => m.color === color && m.tagKind === 'bad');
+        setSelectedPly(firstBad ? firstBad.ply : res.moves.length - 1);
+      }
     } catch (e) {
       setError(e.message || String(e));
     }
   }, [depth, ensureEngine]);
+
+  // Jump straight from a weakness instance into a review at that exact move.
+  const reviewStoredMove = useCallback((inst) => {
+    if (!inst?.pgn) return;
+    navigate('/review');
+    runAnalysisFromPgn(inst.pgn, inst.color, inst.ply);
+  }, [navigate, runAnalysisFromPgn]);
 
   const runBatch = useCallback(async (list) => {
     const items = list && list.length ? list : games;
@@ -157,7 +167,7 @@ export function ReviewerProvider({ children }) {
     depth, setDepth, progress, batch, analysis, focusColor, setFocusColor,
     selectedPly, setSelectedPly, history, setHistory,
     boardThemeKey, changeBoardTheme,
-    fetchGames, loadPgnText, runAnalysis, runAnalysisFromPgn, runBatch, getTopMoves,
+    fetchGames, loadPgnText, runAnalysis, runAnalysisFromPgn, reviewStoredMove, runBatch, getTopMoves,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
