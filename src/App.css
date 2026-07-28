@@ -85,7 +85,14 @@
   flex: 1; min-width: 240px; padding: 12px; border-radius: 8px;
   background: var(--bg2); border: 1px solid var(--line); color: var(--text); font-size: 15px;
 }
-.pgn-input { min-height: 120px; resize: vertical; font-family: ui-monospace, monospace; }
+.pgn-input { min-height: 120px; resize: vertical; font-family: ui-monospace, monospace; width: 100%; }
+.pgn-box { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 8px; }
+.pgn-file { display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; padding: 7px 12px; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--muted); }
+.pgn-file:hover { color: var(--text); border-color: var(--accent); }
+.critical-sub { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.crit-side { font-size: 14px; }
+.tactics-theme { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.tactics-theme svg { color: var(--accent2); }
 .depth-pick { display: flex; gap: 4px; }
 .depth-pick button {
   padding: 0 12px; background: var(--bg2); border: 1px solid var(--line);

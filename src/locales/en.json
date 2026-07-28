@@ -7,6 +7,7 @@
     "newReview": "New review",
     "review": "Review",
     "train": "Train",
+    "tactics": "Tactics",
     "drills": "Drills",
     "openings": "Openings",
     "weaknesses": "My weaknesses",
@@ -48,6 +49,7 @@
     "tabPgn": "Paste PGN",
     "usernamePlaceholder": "{{site}} username",
     "pgnPlaceholder": "Paste one or more PGNs here…",
+    "uploadPgn": "Upload .pgn file",
     "countGames": "{{count}} games",
     "getGames": "Get games",
     "loadPgn": "Load PGN",
@@ -101,6 +103,7 @@
     "phaseAccuracy": "By phase",
     "overall": "overall",
     "criticalMoments": "Turning points",
+    "criticalSub": "Where the game's momentum swung most — click to see how.",
     "engineLines": "Engine's top moves",
     "deeper": "Go deeper",
     "mastersWin": "White score in master games",
@@ -179,6 +182,7 @@
     "vs": "vs",
     "atMove": "move {{n}}",
     "reviewMove": "Review this move",
+    "you": "(you)",
     "bucketMistakes": "Mistakes on moves {{range}}"
   },
   "errors": {
@@ -192,6 +196,17 @@
     "notFound": "No {{site}} player called \"{{name}}\". Check the spelling.",
     "noGames": "\"{{name}}\" has no public games on {{site}} yet.",
     "noRecent": "Couldn't find recent games for \"{{name}}\"."
+  },
+  "tactics": {
+    "loading": "Loading puzzles…",
+    "done": "Done for now — come back for more.",
+    "more": "Load more",
+    "rating": "Rating {{n}}",
+    "allThemes": "All themes",
+    "toMove": "{{side}} to move — find the winning line.",
+    "wrong": "Not the winning move. Retry or move on.",
+    "solved": "Solved — nice calculation!",
+    "retry": "Retry"
   },
   "drills": {
     "heading": "Skill drills",
