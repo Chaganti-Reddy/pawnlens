@@ -6,13 +6,15 @@ import { aggregateWeaknesses, clearHistory, accuracyTrend, worstOpenings, mistak
 import Dashboard from '../components/Dashboard.jsx';
 import AccuracyTrend from '../components/AccuracyTrend.jsx';
 import MistakeHeatmap from '../components/MistakeHeatmap.jsx';
+import { getMe } from '../lib/recents.js';
 import { FaTrashCan } from '../ui/icons.js';
 
 export default function Weakness() {
   const { t } = useTranslation();
   const { history, setHistory, batch, progress, reviewStoredMove } = useReviewer();
   const [params] = useSearchParams();
-  const [dashName, setDashName] = useState(params.get('u') || '');
+  const me = getMe();
+  const [dashName, setDashName] = useState(params.get('u') || me || '');
   const [bucket, setBucket] = useState(null);
 
   useEffect(() => {
@@ -46,8 +48,10 @@ export default function Weakness() {
       <div className="dash-controls">
         <input placeholder={t('weakness.yourUsername')} value={dashName} onChange={(e) => setDashName(e.target.value)} />
         <div className="known-names">
-          {knownNames.slice(0, 8).map((n) => (
-            <button key={n} className={dashName === n ? 'on' : ''} onClick={() => setDashName(n)}>{n}</button>
+          {[...knownNames].sort((a, b) => (a === me ? -1 : b === me ? 1 : 0)).slice(0, 8).map((n) => (
+            <button key={n} className={dashName === n ? 'on' : ''} onClick={() => setDashName(n)}>
+              {n}{n === me ? ` ${t('weakness.you')}` : ''}
+            </button>
           ))}
         </div>
         <button className="ghost" onClick={() => { clearHistory(); setHistory([]); }} title={t('weakness.clearTitle')}>

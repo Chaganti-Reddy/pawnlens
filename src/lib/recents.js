@@ -27,6 +27,17 @@ export function addRecent(source, name) {
   return list;
 }
 
+// The user's own identity — the username they search is treated as "me".
+const ME_KEY = 'pawnlens.me';
+export function getMe() {
+  try { return localStorage.getItem(ME_KEY) || ''; } catch { return ''; }
+}
+export function setMe(name) {
+  const clean = (name || '').trim();
+  if (!clean) return;
+  try { localStorage.setItem(ME_KEY, clean); } catch { /* quota */ }
+}
+
 export function removeRecent(source, name) {
   const all = read();
   all[source] = (all[source] || []).filter((n) => n !== name);
