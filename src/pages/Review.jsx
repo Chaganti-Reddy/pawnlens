@@ -209,7 +209,7 @@ export default function Review() {
             <div className="acc-lbl">{analysis.game.black}</div>
           </div>
         </div>
-        <CriticalMoments moves={analysis.moves} focusColor={focusColor} onSelect={go} selectedPly={selectedPly} />
+        <CriticalMoments analysis={analysis} onSelect={go} selectedPly={selectedPly} />
         <MoveList moves={analysis.moves} selectedPly={selectedPly} onSelect={go} />
         <ExportMenu analysis={analysis} focusColor={focusColor} currentFen={fen} />
         <div className="re-analyze">
