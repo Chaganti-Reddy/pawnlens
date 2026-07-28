@@ -4,7 +4,7 @@ import { Engine } from '../engine/engine.js';
 import { analyzeGame } from '../lib/analyze.js';
 import { fetchChessComGames, fetchLichessGames, splitPgns, pgnMeta } from '../lib/fetchGames.js';
 import { summarize, addToHistory, loadHistory } from '../lib/storage.js';
-import { addRecent } from '../lib/recents.js';
+import { addRecent, setMe } from '../lib/recents.js';
 import { applyTheme, getTheme, getBoardTheme, setBoardTheme } from '../lib/theme.js';
 import i18n from '../i18n.js';
 
@@ -65,6 +65,7 @@ export function ReviewerProvider({ children }) {
       setGames(list);
       setLastQuery(name.trim());
       addRecent(src, name.trim());
+      setMe(name.trim()); // the username you search is "you"
     } catch (e) {
       setError(e.message || String(e));
     } finally {
@@ -97,8 +98,7 @@ export function ReviewerProvider({ children }) {
       const res = await analyzeGame(game.pgn, { engine: eng, depth, onProgress: (d, t) => setProgress({ done: d, total: t }) });
       res.game = game;
       setAnalysis(res);
-      const firstBad = res.moves.find((m) => m.color === side && m.tagKind === 'bad');
-      setSelectedPly(firstBad ? firstBad.ply : res.moves.length - 1);
+      setSelectedPly(-1); // open at the starting position
       setHistory(addToHistory(summarize(game, res, side)));
     } catch (e) {
       setError(e.message || String(e));
@@ -122,11 +122,7 @@ export function ReviewerProvider({ children }) {
       const res = await analyzeGame(pgn, { engine: eng, depth, onProgress: (d, t) => setProgress({ done: d, total: t }) });
       res.game = game;
       setAnalysis(res);
-      if (targetPly != null) setSelectedPly(targetPly);
-      else {
-        const firstBad = res.moves.find((m) => m.color === color && m.tagKind === 'bad');
-        setSelectedPly(firstBad ? firstBad.ply : res.moves.length - 1);
-      }
+      setSelectedPly(targetPly != null ? targetPly : -1);
     } catch (e) {
       setError(e.message || String(e));
     }
