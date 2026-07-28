@@ -55,7 +55,19 @@ export default function Home() {
 
       <div className="input-row">
         {tab === 'pgn' ? (
-          <textarea className="pgn-input" placeholder={t('home.pgnPlaceholder')} value={pgnText} onChange={(e) => setPgnText(e.target.value)} />
+          <div className="pgn-box">
+            <textarea className="pgn-input" placeholder={t('home.pgnPlaceholder')} value={pgnText} onChange={(e) => setPgnText(e.target.value)} />
+            <label className="pgn-file">
+              {t('home.uploadPgn')}
+              <input type="file" accept=".pgn,.txt" hidden onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => setPgnText(String(reader.result || ''));
+                reader.readAsText(file);
+              }} />
+            </label>
+          </div>
         ) : (
           <input className="user-input" placeholder={t('home.usernamePlaceholder', { site: SOURCE_LABEL[tab] })} value={username}
             onChange={(e) => setUsername(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} autoFocus />
