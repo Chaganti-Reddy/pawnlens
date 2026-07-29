@@ -1,152 +1,189 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
+import { useReviewer } from '../context/ReviewerContext.jsx';
 import { collectPuzzles } from '../lib/storage.js';
-import { dueList, review, stats, bestStreak, recordStreak } from '../lib/srs.js';
+import { loadTactics } from '../lib/tactics.js';
+import { dueList, review, bestStreak, recordStreak } from '../lib/srs.js';
+import { getPuzzleRating, updatePuzzleRating, isSolved, markSolved, solvedCount } from '../lib/progress.js';
 import { BOARD_THEMES, getHints } from '../lib/theme.js';
 import { playMove } from '../lib/sound.js';
-import { useReviewer } from '../context/ReviewerContext.jsx';
-import { FaDumbbell, FaCircleCheck, FaCircleXmark, FaLightbulb } from '../ui/icons.js';
+import { FaCircleCheck, FaCircleXmark } from '../ui/icons.js';
 
 const DOT = { background: 'radial-gradient(circle, rgba(0,0,0,0.28) 20%, transparent 22%)' };
 const RING = { boxShadow: 'inset 0 0 0 3px rgba(0,0,0,0.28)' };
-const DIFF_COLOR = { easy: '#7dc96b', medium: '#e6c14b', hard: '#e0574b' };
+const MISTAKE_RATING = { easy: 900, medium: 1300, hard: 1700 };
+
+function fenAfter(fen, line, n) {
+  const c = new Chess(fen);
+  for (let i = 0; i < n; i++) {
+    const u = line[i];
+    try { c.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] || 'q' }); } catch { break; }
+  }
+  return c.fen();
+}
 
 export default function Train() {
   const { t } = useTranslation();
-  const [params] = useSearchParams();
-  const cat = params.get('cat');
   const { boardThemeKey } = useReviewer();
+  const board = BOARD_THEMES[boardThemeKey];
+  const [params] = useSearchParams();
+  const catParam = params.get('cat');
+  const themeParam = params.get('theme');
 
-  const allPuzzles = useMemo(() => {
-    const all = collectPuzzles();
-    return cat ? all.filter((p) => p.category === cat) : all;
-  }, [cat]);
-  const [queue] = useState(() => dueList(allPuzzles));
+  const [data, setData] = useState(null);
+  const [filter, setFilter] = useState(catParam ? 'mistakes' : themeParam || 'all');
+  const [queue, setQueue] = useState([]);
+  const [qi, setQi] = useState(0);
   const [idx, setIdx] = useState(0);
-  const [status, setStatus] = useState('solving'); // solving | correct | wrong | revealed
+  const [status, setStatus] = useState('solving'); // solving | wrong | thinking | solved
+  const [scored, setScored] = useState(false);
   const [hintSquares, setHintSquares] = useState({});
   const [streak, setStreak] = useState(0);
   const [best, setBest] = useState(bestStreak());
-  const board = BOARD_THEMES[boardThemeKey];
+  const [rating, setRating] = useState(getPuzzleRating());
+  const [delta, setDelta] = useState(null);
 
-  const puzzle = queue[idx];
-  const done = idx >= queue.length;
-  const srsStats = stats(allPuzzles);
+  useEffect(() => { loadTactics().then(setData); }, []);
 
-  const next = () => { setStatus('solving'); setIdx((i) => i + 1); setHintSquares({}); };
+  const patterns = data?.patterns || [];
+
+  const pool = useMemo(() => {
+    if (!data) return [];
+    const mistakes = collectPuzzles().filter((p) => !catParam || p.category === catParam).map((p) => ({
+      id: p.id, fen: p.fen, line: [p.solution], source: 'mistake',
+      rating: MISTAKE_RATING[p.difficulty] || 1200, label: p.from, sub: p.opening || '', note: p.note,
+    }));
+    const tactics = data.puzzles.map((p) => ({
+      id: p.id, fen: p.fen, line: p.line, source: 'tactic',
+      rating: p.rating, label: patterns.find((x) => x.id === p.pattern)?.name || 'Tactic', pattern: p.pattern,
+    }));
+    let all;
+    if (filter === 'mistakes') all = mistakes;
+    else if (filter === 'all') all = [...mistakes, ...tactics];
+    else all = tactics.filter((p) => p.pattern === filter);
+    return all;
+  }, [data, filter, catParam, patterns]);
+
+  useEffect(() => {
+    if (!data) return;
+    setQueue(dueList(pool).slice(0, 80));
+    setQi(0); setIdx(0); setStatus('solving'); setScored(false); setHintSquares({});
+  }, [pool, data]);
+
+  const puzzle = queue[qi];
+  const sideToMove = puzzle ? puzzle.fen.split(' ')[1] : 'w';
+  const fen = puzzle ? fenAfter(puzzle.fen, puzzle.line, idx) : undefined;
+
+  const nextPuzzle = () => { setQi((i) => i + 1); setIdx(0); setStatus('solving'); setScored(false); setHintSquares({}); setDelta(null); };
 
   const onSquareClick = ({ square }) => {
-    if (!getHints() || !puzzle) { setHintSquares({}); return; }
+    if (!getHints() || !puzzle || status === 'thinking' || status === 'solved') { setHintSquares({}); return; }
     try {
-      const c = new Chess(puzzle.fen);
-      const piece = c.get(square);
-      if (!piece || piece.color !== puzzle.sideToMove) { setHintSquares({}); return; }
+      const c = new Chess(fen);
+      const p = c.get(square);
+      if (!p || p.color !== c.turn()) { setHintSquares({}); return; }
       const styles = {};
       for (const m of c.moves({ square, verbose: true })) styles[m.to] = m.captured ? RING : DOT;
       setHintSquares(styles);
     } catch { setHintSquares({}); }
   };
 
+  const score = (correct) => {
+    if (scored) return;
+    setScored(true);
+    const r = updatePuzzleRating(puzzle.rating, correct);
+    setRating(r.rating); setDelta(r.delta);
+    review(puzzle.id, correct);
+    if (correct) { markSolved(puzzle.id); const s = streak + 1; setStreak(s); setBest(recordStreak(s)); }
+    else setStreak(0);
+  };
+
   const onDrop = ({ sourceSquare, targetSquare }) => {
     setHintSquares({});
-    if (!puzzle || status === 'correct') return false;
-    let uci;
-    try {
-      const c = new Chess(puzzle.fen);
-      const mv = c.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
-      if (!mv) return false;
-      uci = mv.from + mv.to + (mv.promotion || '');
-    } catch { return false; }
-    if (uci.slice(0, 4) === (puzzle.solution || '').slice(0, 4)) {
-      playMove(true);
-      review(puzzle.id, true);
-      const s = streak + 1;
-      setStreak(s);
-      setBest(recordStreak(s));
-      setStatus('correct');
-    } else {
-      review(puzzle.id, false);
-      setStreak(0);
-      setStatus('wrong');
+    if (!puzzle || status === 'thinking' || status === 'solved') return false;
+    let mv;
+    try { const c = new Chess(fen); mv = c.move({ from: sourceSquare, to: targetSquare, promotion: 'q' }); } catch { return false; }
+    if (!mv) return false;
+    const uci = mv.from + mv.to + (mv.promotion || '');
+    if (uci.slice(0, 4) !== puzzle.line[idx].slice(0, 4)) {
+      score(false);
+      setStatus('wrong'); // board stays live — just try again
+      return false;
     }
+    playMove(!!mv.captured);
+    const afterUser = idx + 1;
+    if (afterUser >= puzzle.line.length) { score(true); setIdx(afterUser); setStatus('solved'); return false; }
+    setIdx(afterUser); setStatus('thinking');
+    setTimeout(() => {
+      setIdx((n) => {
+        const after = n + 1;
+        if (after >= puzzle.line.length) { score(true); setStatus('solved'); }
+        else setStatus('solving');
+        return after;
+      });
+      playMove(false);
+    }, 350);
     return false;
   };
 
-  if (!allPuzzles.length) {
-    return (
-      <main className="train-view empty">
-        <FaDumbbell className="train-empty-icon" />
-        <p>{t('train.empty1')}</p>
-        <p className="muted">{t('train.empty2')}</p>
-      </main>
-    );
-  }
+  if (!data) return <main className="drills-view"><p className="muted">{t('tactics.loading')}</p></main>;
 
-  if (done) {
+  if (!puzzle) {
     return (
       <main className="train-view empty">
         <FaCircleCheck className="train-empty-icon done" />
-        <p>{t('train.allDone')}</p>
-        <p className="muted">{t('train.learned', { learned: srsStats.learned, total: srsStats.total })}</p>
-        <p className="muted">{t('train.best', { n: best })}</p>
+        <p>{t('tactics.done')}</p>
+        <p className="muted">{t('train.ratingLine', { rating })} · {t('train.solvedTotal', { n: solvedCount() })}</p>
+        <button className="primary" onClick={() => { setQueue(dueList(pool).slice(0, 80)); setQi(0); nextPuzzle(); }}>{t('tactics.more')}</button>
       </main>
     );
   }
 
-  const revealed = status === 'revealed' || status === 'correct';
   const options = {
-    id: 'train',
-    position: puzzle.fen,
-    boardOrientation: puzzle.sideToMove === 'b' ? 'black' : 'white',
-    allowDragging: status !== 'correct',
-    darkSquareStyle: { backgroundColor: board.dark },
-    lightSquareStyle: { backgroundColor: board.light },
-    squareStyles: hintSquares,
-    onSquareClick,
-    onPieceDrop: onDrop,
+    id: 'train', position: fen, boardOrientation: sideToMove === 'b' ? 'black' : 'white',
+    allowDragging: status === 'solving' || status === 'wrong',
+    showNotation: true, showAnimations: true, squareStyles: hintSquares, onSquareClick, onPieceDrop: onDrop,
+    darkSquareStyle: { backgroundColor: board.dark }, lightSquareStyle: { backgroundColor: board.light },
   };
 
   return (
     <main className="train-view">
-      <div className="train-board">
-        <div className="board"><Chessboard options={options} /></div>
-      </div>
+      <div className="train-board"><div className="board"><Chessboard options={options} /></div></div>
       <div className="train-side">
-        {cat && <div className="train-drilling">{t('train.drilling', { name: t(`category.${cat}`) })}</div>}
         <div className="train-progress">
-          <span><FaDumbbell /> {t('train.progress', { n: idx + 1, total: queue.length })}</span>
+          <span className="train-rating">
+            {t('train.rating', { n: rating })}
+            {delta != null && <span className={`rd ${delta >= 0 ? 'up' : 'down'}`}>{delta >= 0 ? '+' : ''}{delta}</span>}
+          </span>
           <span className="train-streak">{t('train.streak', { n: streak })} · {t('train.best', { n: best })}</span>
         </div>
+
+        <select className="count-pick" value={filter} onChange={(e) => setFilter(e.target.value)}>
+          <option value="all">{t('train.filterAll')}</option>
+          <option value="mistakes">{t('train.filterMistakes')}</option>
+          {patterns.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+
         <div className="train-prompt">
-          {t('train.findBest', { side: puzzle.sideToMove === 'w' ? t('review.sideWhite') : t('review.sideBlack') })}
-          <span className="diff-badge" style={{ background: DIFF_COLOR[puzzle.difficulty] }}>{t(`train.${puzzle.difficulty}`)}</span>
+          {t('tactics.toMove', { side: sideToMove === 'w' ? t('review.sideWhite') : t('review.sideBlack') })}
+          {isSolved(puzzle.id) && <span className="solved-tag">{t('train.solvedBefore')}</span>}
         </div>
-        <p className="train-from muted">{puzzle.from}{puzzle.opening ? ` · ${puzzle.opening}` : ''}</p>
+        <p className="train-from muted">
+          {puzzle.source === 'mistake' ? t('train.yourGame', { from: puzzle.label }) : `${puzzle.label} · ${t('tactics.rating', { n: puzzle.rating })}`}
+        </p>
 
-        {status === 'correct' && <div className="train-feedback ok"><FaCircleCheck /> {t('train.correct', { move: puzzle.solutionSan })}</div>}
-        {status === 'wrong' && <div className="train-feedback bad"><FaCircleXmark /> {t('train.wrong')}</div>}
-        {status === 'revealed' && <div className="train-feedback hint"><FaLightbulb /> {t('train.answer', { move: puzzle.solutionSan })}</div>}
-
-        {revealed && (
-          <div className="train-why">
-            {puzzle.note && <p className="train-note">{puzzle.note}</p>}
-            {puzzle.bestLine?.length > 0 && (
-              <div className="best-line inline">
-                {puzzle.bestLine.map((san, i) => <span className="bl-move" key={i}>{san}</span>)}
-              </div>
-            )}
+        {status === 'wrong' && <div className="train-feedback bad"><FaCircleXmark /> {t('tactics.wrong')}</div>}
+        {status === 'solved' && (
+          <div className="train-feedback ok">
+            <FaCircleCheck /> {t('tactics.solved')}
+            {puzzle.note && <span className="solved-note">{puzzle.note}</span>}
           </div>
         )}
 
-        <div className="train-actions">
-          {status !== 'correct' && status !== 'revealed' && (
-            <button className="ghost" onClick={() => { setStreak(0); setStatus('revealed'); }}>{t('train.reveal')}</button>
-          )}
-          <button className="primary" onClick={next}>{t('train.next')}</button>
-        </div>
+        <button className="primary" onClick={nextPuzzle}>{t('train.next')}</button>
       </div>
     </main>
   );
