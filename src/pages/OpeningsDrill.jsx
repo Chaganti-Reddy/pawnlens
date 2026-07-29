@@ -8,6 +8,12 @@ import { playMove } from '../lib/sound.js';
 import { loadHistory } from '../lib/storage.js';
 import { FaBook, FaCircleXmark, FaCircleCheck, FaArrowLeftLong, FaMagnifyingGlass, FaLightbulb } from '../ui/icons.js';
 
+const POPULAR = [
+  'Ruy Lopez', 'Italian Game', 'Sicilian Defense', 'French Defense', 'Caro-Kann Defense',
+  "Queen's Gambit", 'King’s Indian Defense', 'English Opening', 'London System',
+  'Scandinavian Defense', 'Vienna Game', 'Nimzo-Indian Defense',
+];
+
 // SAN move list for an opening's PGN.
 function movesOf(pgn) {
   try { const c = new Chess(); c.loadPgn(pgn); return c.history(); } catch { return []; }
@@ -102,6 +108,15 @@ export default function OpeningsDrill() {
     return openings.filter((o) => o.name.toLowerCase().includes(q) || o.eco.toLowerCase() === q).slice(0, 40);
   }, [query, openings]);
 
+  // Popular openings to suggest before any search (shortest/mainline match per name).
+  const popular = useMemo(() => {
+    if (!openings) return [];
+    return POPULAR.map((name) => {
+      const matches = openings.filter((o) => o.name.toLowerCase().startsWith(name.toLowerCase()));
+      return matches.sort((a, b) => a.pgn.length - b.pgn.length)[0];
+    }).filter(Boolean);
+  }, [openings]);
+
   if (chosen) return <OpeningRunner opening={chosen} boardKey={boardThemeKey} onExit={() => setChosen(null)} t={t} />;
 
   const random = () => openings && setChosen(openings[Math.floor(Math.random() * openings.length)]);
@@ -112,15 +127,35 @@ export default function OpeningsDrill() {
       <p className="muted">{t('openings.sub2', { count: openings ? openings.length : '…' })}</p>
 
       <div className="input-row">
-        <input className="user-input" placeholder={t('openings.search')} value={query} onChange={(e) => setQuery(e.target.value)} autoFocus />
+        <input
+          className="user-input"
+          placeholder={t('openings.search')}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === 'Escape' && setQuery('')}
+          autoFocus
+        />
         <button className="primary" onClick={random}><FaMagnifyingGlass /> {t('openings.random')}</button>
       </div>
 
-      {mine.length > 0 && !query && (
+      {!query && mine.length > 0 && (
         <>
           <h3 className="op-section">{t('openings.fromGames')}</h3>
           <div className="op-list">
             {mine.map((o, i) => (
+              <button className="op-item" key={i} onClick={() => setChosen(o)}>
+                <span className="op-eco">{o.eco}</span><span className="op-nm">{o.name}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {!query && (
+        <>
+          <h3 className="op-section">{t('openings.popular')}</h3>
+          <div className="op-list">
+            {popular.map((o, i) => (
               <button className="op-item" key={i} onClick={() => setChosen(o)}>
                 <span className="op-eco">{o.eco}</span><span className="op-nm">{o.name}</span>
               </button>
