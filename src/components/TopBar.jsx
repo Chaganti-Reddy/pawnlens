@@ -26,8 +26,7 @@ export default function TopBar() {
           {t('nav.train')}
           {due > 0 && <span className="due-badge">{due}</span>}
         </NavLink>
-        <NavLink to="/tactics" className={cls}>{t('nav.tactics')}</NavLink>
-        <NavLink to="/drills" className={cls}>{t('nav.drills')}</NavLink>
+        <NavLink to="/endgames" className={cls}>{t('nav.endgames')}</NavLink>
         <NavLink to="/openings" className={cls}>{t('nav.openings')}</NavLink>
         <NavLink to="/weaknesses" className={cls}>{t('nav.weaknesses')}</NavLink>
         <span className={`engine-dot ${engineStatus}`} title={engineStatus === 'ready' ? t('nav.engineReady') : t('nav.engineLoading')} />

@@ -441,6 +441,12 @@
 .train-progress { display: flex; justify-content: space-between; align-items: center; }
 .train-streak { color: var(--muted); font-size: 12px; }
 .diff-badge { font-size: 11px; font-weight: 700; color: #14210f; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle; }
+.train-rating { font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+.rd { font-size: 12px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
+.rd.up { color: var(--accent); background: rgba(125,201,107,0.15); }
+.rd.down { color: var(--bad); background: rgba(224,87,75,0.15); }
+.solved-tag { font-size: 11px; color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; padding: 1px 7px; margin-left: 8px; }
+.solved-note { display: block; margin-top: 6px; font-weight: 400; font-size: 13px; color: var(--text); }
 .train-why { display: flex; flex-direction: column; gap: 8px; }
 
 /* settings menu */
