@@ -15,8 +15,9 @@ import EngineLines from '../components/EngineLines.jsx';
 import ExportMenu from '../components/ExportMenu.jsx';
 import Takeaway from '../components/Takeaway.jsx';
 import { BOARD_THEMES } from '../lib/theme.js';
-import { playMove } from '../lib/sound.js';
+import { playMove, playSound, soundForSan } from '../lib/sound.js';
 import { parseSharedGame } from '../lib/share.js';
+import { hangingSquares } from '../lib/threats.js';
 import { FaAngleLeft, FaAngleRight, FaAnglesLeft, FaAnglesRight, FaArrowLeftLong, FaDumbbell, FaCircleCheck, FaCircleXmark } from '../ui/icons.js';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -45,11 +46,17 @@ export default function Review() {
   const [retryFen, setRetryFen] = useState(null);
   const [retryStatus, setRetryStatus] = useState('idle'); // idle | correct | wrong
 
+  // Active-recall + board-intelligence toggles.
+  const [guess, setGuess] = useState(false);
+  const [guessResult, setGuessResult] = useState(null);
+  const [showThreats, setShowThreats] = useState(false);
+
   const go = useCallback((ply) => {
     const clamped = Math.max(-1, Math.min(total - 1, ply));
     setSelectedPly(clamped);
     setRetry(false); setRetryStatus('idle'); setRetryFen(null);
-    if (clamped >= 0 && analysis) playMove(analysis.moves[clamped]?.san?.includes('x'));
+    setGuessResult(null);
+    if (clamped >= 0 && analysis) playSound(soundForSan(analysis.moves[clamped]?.san));
   }, [total, setSelectedPly, analysis]);
 
   useEffect(() => {
@@ -125,19 +132,44 @@ export default function Review() {
       arrows.push({ startSquare: node.bestUci.slice(0, 2), endSquare: node.bestUci.slice(2, 4), color: '#26c2a3' });
     }
   }
-  const boardOptions = retry
-    ? {
-        id: 'review', position: retryFen || node.fenBefore,
-        boardOrientation: focusColor === 'w' ? 'white' : 'black',
-        allowDragging: retryStatus !== 'thinking', showNotation: true, showAnimations: true,
-        onPieceDrop: onRetryDrop,
-        darkSquareStyle: { backgroundColor: boardTheme.dark }, lightSquareStyle: { backgroundColor: boardTheme.light },
-      }
-    : {
-        id: 'review', position: fen, boardOrientation: focusColor === 'w' ? 'white' : 'black',
-        arrows, squareStyles, allowDragging: false, showNotation: true, showAnimations: true,
-        darkSquareStyle: { backgroundColor: boardTheme.dark }, lightSquareStyle: { backgroundColor: boardTheme.light },
-      };
+  // Guess-the-move: on your turn, hide the answer and let you play it.
+  const nextMove = analysis && selectedPly + 1 < total ? analysis.moves[selectedPly + 1] : null;
+  const guessTurn = guess && !retry && !!nextMove && nextMove.color === focusColor;
+  const sanOfUci = (fenBefore, uci) => {
+    if (!uci) return null;
+    try { const c = new Chess(fenBefore); return c.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] || 'q' })?.san; } catch { return null; }
+  };
+  const onGuessDrop = ({ sourceSquare, targetSquare }) => {
+    if (!nextMove) return false;
+    let mv;
+    try { const c = new Chess(nextMove.fenBefore); mv = c.move({ from: sourceSquare, to: targetSquare, promotion: 'q' }); } catch { return false; }
+    if (!mv) return false;
+    const uci = mv.from + mv.to + (mv.promotion || '');
+    let text, kind;
+    if (uci.slice(0, 4) === (nextMove.bestUci || '').slice(0, 4)) { text = t('review.guessBest', { played: nextMove.san }); kind = 'ok'; }
+    else if (uci === nextMove.uci) { text = t('review.guessSame'); kind = nextMove.tagKind === 'bad' ? 'bad' : 'ok'; }
+    else { text = t('review.guessDiff', { you: mv.san, played: nextMove.san, best: sanOfUci(nextMove.fenBefore, nextMove.bestUci) || '?' }); kind = 'info'; }
+    setGuessResult({ text, kind });
+    setSelectedPly(nextMove.ply);
+    setRetry(false);
+    playSound(soundForSan(nextMove.san));
+    return false;
+  };
+
+  // Assemble the board by mode: retry play / guess / normal review.
+  let pos, dragging, onDrop, arrowsUsed = [], styles = {};
+  if (retry) { pos = retryFen || node.fenBefore; dragging = retryStatus !== 'thinking'; onDrop = onRetryDrop; }
+  else if (guessTurn) { pos = nextMove.fenBefore; dragging = true; onDrop = onGuessDrop; }
+  else { pos = fen; dragging = false; arrowsUsed = arrows; styles = { ...squareStyles }; }
+  if (showThreats) {
+    for (const sq of hangingSquares(pos)) styles[sq] = { background: 'rgba(224,87,75,0.5)' };
+  }
+  const boardOptions = {
+    id: 'review', position: pos, boardOrientation: focusColor === 'w' ? 'white' : 'black',
+    arrows: arrowsUsed, squareStyles: styles, allowDragging: dragging, onPieceDrop: onDrop,
+    showNotation: true, showAnimations: true,
+    darkSquareStyle: { backgroundColor: boardTheme.dark }, lightSquareStyle: { backgroundColor: boardTheme.light },
+  };
 
   if (analyzing) {
     return (
@@ -172,6 +204,14 @@ export default function Review() {
           <span className="gh-players">{analysis.game.white} {t('review.vs')} {analysis.game.black}</span>
           {analysis.game.opening && <span className="gh-opening">{analysis.game.opening}</span>}
         </div>
+        <div className="board-toggles">
+          <button className={guess ? 'on' : ''} onClick={() => { setGuess((g) => !g); setGuessResult(null); }}>
+            {t('review.guessMode')}
+          </button>
+          <button className={showThreats ? 'on' : ''} onClick={() => setShowThreats((s) => !s)}>
+            {t('review.threats')}
+          </button>
+        </div>
         <div className="board-wrap">
           <EvalBar evalWhite={evalWhite} orientation={focusColor === 'w' ? 'white' : 'black'} />
           <div className="board"><Chessboard options={boardOptions} /></div>
@@ -184,6 +224,12 @@ export default function Review() {
             {retryStatus === 'playing' && <span><FaCircleCheck /> {t('review.retryPlaying')}</span>}
             <button className="retry-exit" onClick={exitRetry}>{t('review.exitRetry')}</button>
           </div>
+        ) : guessResult ? (
+          <div className={`retry-bar ${guessResult.kind === 'ok' ? 'correct' : guessResult.kind === 'bad' ? 'wrong' : ''}`}>
+            <span>{guessResult.text}</span>
+          </div>
+        ) : guessTurn ? (
+          <div className="retry-bar"><span>{t('review.guessPrompt')}</span></div>
         ) : (
           <EvalGraph series={analysis.evalSeries} selectedPly={selectedPly} onSelect={go} />
         )}
