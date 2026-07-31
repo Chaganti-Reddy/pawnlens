@@ -18,6 +18,7 @@ import { BOARD_THEMES } from '../lib/theme.js';
 import { playMove, playSound, soundForSan } from '../lib/sound.js';
 import { parseSharedGame } from '../lib/share.js';
 import { hangingSquares } from '../lib/threats.js';
+import { outcomeText } from '../lib/outcome.js';
 import { FaAngleLeft, FaAngleRight, FaAnglesLeft, FaAnglesRight, FaArrowLeftLong, FaDumbbell, FaCircleCheck, FaCircleXmark } from '../ui/icons.js';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -50,6 +51,14 @@ export default function Review() {
   const [guess, setGuess] = useState(false);
   const [guessResult, setGuessResult] = useState(null);
   const [showThreats, setShowThreats] = useState(false);
+  const [threatArrow, setThreatArrow] = useState(null);
+  const [narrate, setNarrate] = useState(false);
+
+  // Free explore / analysis board.
+  const [explore, setExplore] = useState(false);
+  const [exploreFen, setExploreFen] = useState(null);
+  const [exploreStack, setExploreStack] = useState([]);
+  const [exploreEval, setExploreEval] = useState({ cp: 0 });
 
   const go = useCallback((ply) => {
     const clamped = Math.max(-1, Math.min(total - 1, ply));
@@ -70,6 +79,37 @@ export default function Review() {
     return () => window.removeEventListener('keydown', onKey);
   }, [selectedPly, total, go]);
 
+  // Opponent-threat arrow: what the other side would play if it were their move.
+  useEffect(() => {
+    const cur = selectedPly >= 0 && analysis ? analysis.moves[selectedPly] : null;
+    if (!showThreats || explore || retry) { setThreatArrow(null); return; }
+    const f = cur ? cur.fenAfter : START_FEN;
+    const parts = f.split(' ');
+    parts[1] = parts[1] === 'w' ? 'b' : 'w';
+    parts[3] = '-';
+    let alive = true;
+    getTopMoves(parts.join(' '), 1).then((lines) => {
+      const uci = lines?.[0]?.pv?.[0];
+      if (alive && uci?.length >= 4) setThreatArrow({ startSquare: uci.slice(0, 2), endSquare: uci.slice(2, 4), color: 'rgba(230,120,60,0.9)' });
+      else if (alive) setThreatArrow(null);
+    });
+    return () => { alive = false; };
+  }, [showThreats, explore, retry, selectedPly, analysis, getTopMoves]);
+
+  // Auto narration: step through and read each move's coach note aloud.
+  useEffect(() => {
+    if (!narrate) { try { window.speechSynthesis?.cancel(); } catch { /* none */ } return; }
+    if (selectedPly >= total - 1) { setNarrate(false); return; }
+    const cur = selectedPly >= 0 && analysis ? analysis.moves[selectedPly] : null;
+    const text = cur ? `${cur.moveNumber}${cur.color === 'w' ? '.' : '...'} ${cur.san}. ${cur.note}` : '';
+    try {
+      window.speechSynthesis?.cancel();
+      if (text && window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+    } catch { /* no speech */ }
+    const id = setTimeout(() => go(selectedPly + 1), 3600);
+    return () => clearTimeout(id);
+  }, [narrate, selectedPly, total, analysis, go]);
+
   const analyzing = !analysis || progress.done < progress.total;
   const loadingPct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
   const hasSharedParam = !!params.get('g');
@@ -78,7 +118,7 @@ export default function Review() {
 
   const node = selectedPly >= 0 && analysis ? analysis.moves[selectedPly] : null;
   const fen = node ? node.fenAfter : START_FEN;
-  const evalWhite = node ? node.evalWhite : { cp: 0 };
+  const evalWhite = explore ? exploreEval : node ? node.evalWhite : { cp: 0 };
   const boardTheme = BOARD_THEMES[boardThemeKey];
   const canRetry = node && node.tagKind === 'bad' && node.bestUci;
 
@@ -122,9 +162,40 @@ export default function Review() {
     return false;
   };
 
+  // Free explore / analysis board.
+  const evalToWhite = (lines, turn) => {
+    const l = lines?.[0];
+    if (!l) return { cp: 0 };
+    if (l.mate != null) return { mate: turn === 'w' ? l.mate : -l.mate };
+    return { cp: turn === 'w' ? l.cp : -(l.cp ?? 0) };
+  };
+  const evalFen = (f) => { getTopMoves(f, 1).then((lines) => setExploreEval(evalToWhite(lines, f.split(' ')[1]))); };
+  const startExplore = () => {
+    const base = node ? node.fenAfter : START_FEN;
+    setExplore(true); setExploreFen(base); setExploreStack([]); evalFen(base);
+  };
+  const exitExplore = () => { setExplore(false); setExploreFen(null); setExploreStack([]); };
+  const onExploreDrop = ({ sourceSquare, targetSquare }) => {
+    let c, mv;
+    try { c = new Chess(exploreFen); mv = c.move({ from: sourceSquare, to: targetSquare, promotion: 'q' }); } catch { return false; }
+    if (!mv) return false;
+    playSound(soundForSan(mv.san));
+    setExploreStack((s) => [...s, exploreFen]);
+    setExploreFen(c.fen());
+    evalFen(c.fen());
+    return false;
+  };
+  const undoExplore = () => setExploreStack((s) => {
+    if (!s.length) return s;
+    const prev = s[s.length - 1];
+    setExploreFen(prev); evalFen(prev);
+    return s.slice(0, -1);
+  });
+  const resetExplore = () => { const base = node ? node.fenAfter : START_FEN; setExploreFen(base); setExploreStack([]); evalFen(base); };
+
   const arrows = [];
   const squareStyles = {};
-  if (node && !retry) {
+  if (node && !retry && !explore) {
     arrows.push({ startSquare: node.from, endSquare: node.to, color: 'rgba(255,255,255,0.30)' });
     squareStyles[node.from] = { background: 'rgba(230,193,75,0.28)' };
     squareStyles[node.to] = { background: 'rgba(230,193,75,0.40)' };
@@ -156,11 +227,12 @@ export default function Review() {
     return false;
   };
 
-  // Assemble the board by mode: retry play / guess / normal review.
+  // Assemble the board by mode: explore / retry play / guess / normal review.
   let pos, dragging, onDrop, arrowsUsed = [], styles = {};
-  if (retry) { pos = retryFen || node.fenBefore; dragging = retryStatus !== 'thinking'; onDrop = onRetryDrop; }
+  if (explore) { pos = exploreFen || fen; dragging = true; onDrop = onExploreDrop; }
+  else if (retry) { pos = retryFen || node.fenBefore; dragging = retryStatus !== 'thinking'; onDrop = onRetryDrop; }
   else if (guessTurn) { pos = nextMove.fenBefore; dragging = true; onDrop = onGuessDrop; }
-  else { pos = fen; dragging = false; arrowsUsed = arrows; styles = { ...squareStyles }; }
+  else { pos = fen; dragging = false; arrowsUsed = threatArrow ? [...arrows, threatArrow] : arrows; styles = { ...squareStyles }; }
   if (showThreats) {
     for (const sq of hangingSquares(pos)) styles[sq] = { background: 'rgba(224,87,75,0.5)' };
   }
@@ -181,6 +253,15 @@ export default function Review() {
         </div>
       </main>
     );
+  }
+
+  const oc = outcomeText(analysis.game);
+  let resultLine;
+  if (oc.text) resultLine = oc.text;
+  else if (oc.winner === 'ongoing') resultLine = t('review.ongoing');
+  else {
+    const who = oc.winner === 'draw' ? t('review.drawResult') : oc.winner === 'white' ? t('review.whiteWon') : t('review.blackWon');
+    resultLine = oc.reasonKey ? `${who} ${t('review.by', { reason: t(`review.reason_${oc.reasonKey}`) })}` : who;
   }
 
   return (
@@ -205,18 +286,30 @@ export default function Review() {
           {analysis.game.opening && <span className="gh-opening">{analysis.game.opening}</span>}
         </div>
         <div className="board-toggles">
-          <button className={guess ? 'on' : ''} onClick={() => { setGuess((g) => !g); setGuessResult(null); }}>
+          <button className={guess ? 'on' : ''} onClick={() => { setGuess((g) => !g); setGuessResult(null); }} disabled={explore}>
             {t('review.guessMode')}
           </button>
           <button className={showThreats ? 'on' : ''} onClick={() => setShowThreats((s) => !s)}>
             {t('review.threats')}
+          </button>
+          <button className={explore ? 'on' : ''} onClick={() => (explore ? exitExplore() : startExplore())}>
+            {t('review.explore')}
+          </button>
+          <button className={narrate ? 'on' : ''} onClick={() => setNarrate((n) => !n)} disabled={explore}>
+            {t('review.narrate')}
           </button>
         </div>
         <div className="board-wrap">
           <EvalBar evalWhite={evalWhite} orientation={focusColor === 'w' ? 'white' : 'black'} />
           <div className="board"><Chessboard options={boardOptions} /></div>
         </div>
-        {retry ? (
+        {explore ? (
+          <div className="retry-bar">
+            <span>{t('review.exploreHint')}</span>
+            <button className="retry-exit" onClick={undoExplore} disabled={!exploreStack.length}>{t('review.undo')}</button>
+            <button className="retry-exit" onClick={resetExplore}>{t('review.resetPos')}</button>
+          </div>
+        ) : retry ? (
           <div className={`retry-bar ${retryStatus}`}>
             {retryStatus === 'idle' && <span>{t('review.retryPrompt')}</span>}
             {retryStatus === 'wrong' && <span><FaCircleXmark /> {t('review.retryWrong')}</span>}
@@ -244,6 +337,10 @@ export default function Review() {
       {/* RIGHT — the whole game */}
       <aside className="col-full">
         <div className="col-title">{t('review.wholeGame')}</div>
+        <div className={`result-card r-${oc.winner}`}>
+          <span className="rc-score">{oc.result}</span>
+          <span className="rc-text">{resultLine}</span>
+        </div>
         <Takeaway analysis={analysis} focusColor={focusColor} />
         <div className="acc-cards">
           <div className={`acc ${focusColor === 'w' ? 'focus' : ''}`}>
