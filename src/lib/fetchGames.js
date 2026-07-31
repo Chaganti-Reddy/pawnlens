@@ -26,13 +26,15 @@ function openingFromEcoUrl(url) {
 
 export function pgnMeta(pgn) {
   const opening = tagOf(pgn, 'Opening') || openingFromEcoUrl(tagOf(pgn, 'ECOUrl'));
+  // Prefer the Result tag; fall back to the result token at the end of the movetext.
+  const movetextResult = (pgn.match(/(1-0|0-1|1\/2-1\/2)\s*$/) || [])[1];
   return {
     pgn,
     white: tagOf(pgn, 'White') || 'White',
     black: tagOf(pgn, 'Black') || 'Black',
     whiteElo: tagOf(pgn, 'WhiteElo'),
     blackElo: tagOf(pgn, 'BlackElo'),
-    result: tagOf(pgn, 'Result') || '*',
+    result: tagOf(pgn, 'Result') || movetextResult || '*',
     date: tagOf(pgn, 'Date') || tagOf(pgn, 'UTCDate'),
     event: tagOf(pgn, 'Event'),
     timeControl: tagOf(pgn, 'TimeControl'),
