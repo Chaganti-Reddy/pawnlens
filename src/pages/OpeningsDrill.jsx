@@ -4,6 +4,7 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { useReviewer } from '../context/ReviewerContext.jsx';
 import { BOARD_THEMES } from '../lib/theme.js';
+import { piecesFor } from '../lib/pieces.jsx';
 import { playMove } from '../lib/sound.js';
 import { loadHistory } from '../lib/storage.js';
 import { FaBook, FaCircleXmark, FaCircleCheck, FaArrowLeftLong, FaMagnifyingGlass, FaLightbulb } from '../ui/icons.js';
@@ -19,7 +20,7 @@ function movesOf(pgn) {
   try { const c = new Chess(); c.loadPgn(pgn); return c.history(); } catch { return []; }
 }
 
-function OpeningRunner({ opening, boardKey, onExit, t }) {
+function OpeningRunner({ opening, boardKey, pieceSetKey, onExit, t }) {
   const board = BOARD_THEMES[boardKey];
   const moves = useMemo(() => movesOf(opening.pgn), [opening]);
   const [idx, setIdx] = useState(0);
@@ -50,6 +51,7 @@ function OpeningRunner({ opening, boardKey, onExit, t }) {
   const options = {
     id: 'openings', position: fen, boardOrientation: orientation,
     allowDragging: status !== 'done', showNotation: true, showAnimations: true, onPieceDrop: onDrop,
+    pieces: piecesFor(pieceSetKey),
     darkSquareStyle: { backgroundColor: board.dark }, lightSquareStyle: { backgroundColor: board.light },
   };
 
@@ -87,7 +89,7 @@ function OpeningRunner({ opening, boardKey, onExit, t }) {
 
 export default function OpeningsDrill() {
   const { t } = useTranslation();
-  const { boardThemeKey } = useReviewer();
+  const { boardThemeKey, pieceSetKey } = useReviewer();
   const [query, setQuery] = useState('');
   const [chosen, setChosen] = useState(null);
   const [openings, setOpenings] = useState(null);
@@ -117,7 +119,7 @@ export default function OpeningsDrill() {
     }).filter(Boolean);
   }, [openings]);
 
-  if (chosen) return <OpeningRunner opening={chosen} boardKey={boardThemeKey} onExit={() => setChosen(null)} t={t} />;
+  if (chosen) return <OpeningRunner opening={chosen} boardKey={boardThemeKey} pieceSetKey={pieceSetKey} onExit={() => setChosen(null)} t={t} />;
 
   const random = () => openings && setChosen(openings[Math.floor(Math.random() * openings.length)]);
 

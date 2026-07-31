@@ -24,6 +24,14 @@ export function setBoardTheme(key) {
   try { localStorage.setItem(BOARD_KEY, key); } catch { /* quota */ }
 }
 
+const PIECE_KEY = 'pawnlens.pieces';
+export function getPieceSet() {
+  return localStorage.getItem(PIECE_KEY) || 'default';
+}
+export function setPieceSet(key) {
+  try { localStorage.setItem(PIECE_KEY, key); } catch { /* quota */ }
+}
+
 // Show legal-move hint dots in the trainer.
 const HINTS_KEY = 'pawnlens.hints';
 export function getHints() {

@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaGear, FaSun, FaMoon, FaVolumeHigh, FaVolumeXmark, FaKeyboard, FaLightbulb } from '../ui/icons.js';
 import { getTheme, applyTheme, BOARD_THEMES, getHints, setHints } from '../lib/theme.js';
+import { PIECE_SETS } from '../lib/pieces.jsx';
 import { isSoundOn, setSoundOn } from '../lib/sound.js';
 import { useReviewer } from '../context/ReviewerContext.jsx';
 import ShortcutsHelp from './ShortcutsHelp.jsx';
 
 export default function SettingsMenu() {
   const { t } = useTranslation();
-  const { boardThemeKey, changeBoardTheme } = useReviewer();
+  const { boardThemeKey, changeBoardTheme, pieceSetKey, changePieceSet } = useReviewer();
   const [open, setOpen] = useState(false);
   const [help, setHelp] = useState(false);
   const [theme, setTheme] = useState(getTheme());
@@ -45,6 +46,12 @@ export default function SettingsMenu() {
                   onClick={() => pickBoard(key)} style={{ background: `linear-gradient(135deg, ${b.light} 50%, ${b.dark} 50%)` }} />
               ))}
             </span>
+          </div>
+          <div className="settings-row static">
+            <span>{t('settings.pieces')}</span>
+            <select className="piece-select" value={pieceSetKey} onChange={(e) => changePieceSet(e.target.value)}>
+              {Object.entries(PIECE_SETS).map(([key, name]) => <option key={key} value={key}>{name}</option>)}
+            </select>
           </div>
           <button className="settings-row" onClick={toggleSound}>
             {sound ? <FaVolumeHigh /> : <FaVolumeXmark />} {t('settings.sound')}: <b>{sound ? t('settings.on') : t('settings.off')}</b>

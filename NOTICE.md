@@ -1,5 +1,11 @@
 # Third-party notices
 
+## Bundled open data & assets
+
+- **Openings book** (`src/data/openings.json`) — from lichess-org/chess-openings, CC0.
+- **Tactics puzzles** (`src/data/puzzles.json`) — subset of the Lichess puzzle database, CC0.
+- **cburnett piece set** (`src/data/pieces-cburnett.json`) — by Colin M.L. Burnett, GPLv2+ (via lichess), used under GPL.
+
 ## Stockfish.js (chess engine)
 
 PawnLens runs **Stockfish.js** in the browser for all position analysis.

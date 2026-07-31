@@ -15,6 +15,7 @@ import EngineLines from '../components/EngineLines.jsx';
 import ExportMenu from '../components/ExportMenu.jsx';
 import Takeaway from '../components/Takeaway.jsx';
 import { BOARD_THEMES } from '../lib/theme.js';
+import { piecesFor } from '../lib/pieces.jsx';
 import { playMove, playSound, soundForSan } from '../lib/sound.js';
 import { parseSharedGame } from '../lib/share.js';
 import { hangingSquares } from '../lib/threats.js';
@@ -27,7 +28,7 @@ export default function Review() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [params] = useSearchParams();
-  const { analysis, focusColor, progress, engineStatus, selectedPly, setSelectedPly, runAnalysis, runAnalysisFromPgn, getTopMoves, boardThemeKey } = useReviewer();
+  const { analysis, focusColor, progress, engineStatus, selectedPly, setSelectedPly, runAnalysis, runAnalysisFromPgn, getTopMoves, boardThemeKey, pieceSetKey } = useReviewer();
 
   // Shared link: decode PGN from the URL and analyze it once.
   const sharedLoaded = useRef(false);
@@ -239,7 +240,7 @@ export default function Review() {
   const boardOptions = {
     id: 'review', position: pos, boardOrientation: focusColor === 'w' ? 'white' : 'black',
     arrows: arrowsUsed, squareStyles: styles, allowDragging: dragging, onPieceDrop: onDrop,
-    showNotation: true, showAnimations: true,
+    showNotation: true, showAnimations: true, pieces: piecesFor(pieceSetKey),
     darkSquareStyle: { backgroundColor: boardTheme.dark }, lightSquareStyle: { backgroundColor: boardTheme.light },
   };
 

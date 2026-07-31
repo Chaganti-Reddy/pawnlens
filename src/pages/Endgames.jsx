@@ -4,13 +4,14 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { useReviewer } from '../context/ReviewerContext.jsx';
 import { BOARD_THEMES } from '../lib/theme.js';
+import { piecesFor } from '../lib/pieces.jsx';
 import { playMove } from '../lib/sound.js';
 import ENDGAMES from '../data/endgames.json';
 import { FaArrowLeftLong, FaCircleCheck, FaCircleXmark } from '../ui/icons.js';
 
 function Runner({ eg, boardKey, onExit, t }) {
   const board = BOARD_THEMES[boardKey];
-  const { getTopMoves } = useReviewer();
+  const { getTopMoves, pieceSetKey } = useReviewer();
   const gameRef = useRef(new Chess(eg.fen));
   const [fen, setFen] = useState(eg.fen);
   const [status, setStatus] = useState('play'); // play | thinking | won | drawn | lost
@@ -54,6 +55,7 @@ function Runner({ eg, boardKey, onExit, t }) {
   const options = {
     id: 'endgame', position: fen, boardOrientation: side === 'b' ? 'black' : 'white',
     allowDragging: status === 'play', showNotation: true, showAnimations: true, onPieceDrop: onDrop,
+    pieces: piecesFor(pieceSetKey),
     darkSquareStyle: { backgroundColor: board.dark }, lightSquareStyle: { backgroundColor: board.light },
   };
 

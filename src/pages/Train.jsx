@@ -9,6 +9,7 @@ import { loadTactics } from '../lib/tactics.js';
 import { dueList, review, bestStreak, recordStreak } from '../lib/srs.js';
 import { getPuzzleRating, updatePuzzleRating, isSolved, markSolved, solvedCount } from '../lib/progress.js';
 import { BOARD_THEMES, getHints } from '../lib/theme.js';
+import { piecesFor } from '../lib/pieces.jsx';
 import { playMove } from '../lib/sound.js';
 import { FaCircleCheck, FaCircleXmark } from '../ui/icons.js';
 
@@ -27,7 +28,7 @@ function fenAfter(fen, line, n) {
 
 export default function Train() {
   const { t } = useTranslation();
-  const { boardThemeKey } = useReviewer();
+  const { boardThemeKey, pieceSetKey } = useReviewer();
   const board = BOARD_THEMES[boardThemeKey];
   const [params] = useSearchParams();
   const catParam = params.get('cat');
@@ -146,6 +147,7 @@ export default function Train() {
     id: 'train', position: fen, boardOrientation: sideToMove === 'b' ? 'black' : 'white',
     allowDragging: status === 'solving' || status === 'wrong',
     showNotation: true, showAnimations: true, squareStyles: hintSquares, onSquareClick, onPieceDrop: onDrop,
+    pieces: piecesFor(pieceSetKey),
     darkSquareStyle: { backgroundColor: board.dark }, lightSquareStyle: { backgroundColor: board.light },
   };
 

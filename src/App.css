@@ -479,6 +479,7 @@
 .swatches { display: inline-flex; gap: 5px; }
 .swatch { width: 20px; height: 20px; border-radius: 5px; border: 2px solid transparent; cursor: pointer; }
 .swatch.on { border-color: var(--accent); }
+.piece-select { background: var(--bg3); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 4px 6px; font-size: 12px; cursor: pointer; }
 
 /* modal */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 50; }

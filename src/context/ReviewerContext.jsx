@@ -5,7 +5,7 @@ import { analyzeGame } from '../lib/analyze.js';
 import { fetchChessComGames, fetchLichessGames, splitPgns, pgnMeta } from '../lib/fetchGames.js';
 import { summarize, addToHistory, loadHistory } from '../lib/storage.js';
 import { addRecent, setMe } from '../lib/recents.js';
-import { applyTheme, getTheme, getBoardTheme, setBoardTheme } from '../lib/theme.js';
+import { applyTheme, getTheme, getBoardTheme, setBoardTheme, getPieceSet, setPieceSet } from '../lib/theme.js';
 import i18n from '../i18n.js';
 
 const Ctx = createContext(null);
@@ -34,6 +34,8 @@ export function ReviewerProvider({ children }) {
   const [history, setHistory] = useState(loadHistory());
   const [boardThemeKey, setBoardThemeKey] = useState(getBoardTheme());
   const changeBoardTheme = useCallback((key) => { setBoardTheme(key); setBoardThemeKey(key); }, []);
+  const [pieceSetKey, setPieceSetKey] = useState(getPieceSet());
+  const changePieceSet = useCallback((key) => { setPieceSet(key); setPieceSetKey(key); }, []);
 
   const ensureEngine = useCallback(async () => {
     const eng = engineRef.current || (engineRef.current = new Engine());
@@ -162,7 +164,7 @@ export function ReviewerProvider({ children }) {
     engineStatus, source, games, lastQuery, busy, error, setError,
     depth, setDepth, progress, batch, analysis, focusColor, setFocusColor,
     selectedPly, setSelectedPly, history, setHistory,
-    boardThemeKey, changeBoardTheme,
+    boardThemeKey, changeBoardTheme, pieceSetKey, changePieceSet,
     fetchGames, loadPgnText, runAnalysis, runAnalysisFromPgn, reviewStoredMove, runBatch, getTopMoves,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
