@@ -6,7 +6,7 @@ import GameCard from '../components/GameCard.jsx';
 import { SourceMark } from '../components/icons.jsx';
 import { FaXmark, FaMagnifyingGlass } from '../ui/icons.js';
 
-const DEPTHS = [{ key: 'depthFast', value: 8 }, { key: 'depthBalanced', value: 12 }, { key: 'depthDeep', value: 16 }];
+const DEPTHS = [{ key: 'depthFast', value: 10 }, { key: 'depthBalanced', value: 14 }, { key: 'depthDeep', value: 18 }];
 const COUNTS = [10, 25, 50, 100];
 const SOURCE_LABEL = { chesscom: 'chess.com', lichess: 'lichess' };
 

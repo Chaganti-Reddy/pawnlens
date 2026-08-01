@@ -26,10 +26,13 @@ export function moveAccuracy(winBefore, winAfter) {
   return Math.max(0, Math.min(100, acc));
 }
 
-// Simple mean accuracy across a color's moves.
+// Harmonic mean of per-move accuracy. Unlike a plain average, a few blunders pull
+// the score down hard — closer to how chess.com/lichess accuracy actually feels,
+// so a beginner's game reads realistically low rather than a flattering 90%+.
 export function gameAccuracy(accuracies) {
   if (!accuracies.length) return 0;
-  return accuracies.reduce((a, b) => a + b, 0) / accuracies.length;
+  const denom = accuracies.reduce((s, a) => s + 1 / Math.max(1, a), 0);
+  return accuracies.length / denom;
 }
 
 // Rough performance-rating gauge from an accuracy %. Deliberately approximate —
