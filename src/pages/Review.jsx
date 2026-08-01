@@ -277,6 +277,11 @@ export default function Review() {
         )}
         <EngineLines fen={node ? node.fenBefore : START_FEN} />
         <ComparePanel node={node} />
+        <div className="re-analyze">
+          <button onClick={() => runAnalysis(analysis.game, focusColor === 'w' ? 'b' : 'w')}>
+            {t('review.analyzeFromSide', { side: focusColor === 'w' ? t('review.sideBlack') : t('review.sideWhite') })}
+          </button>
+        </div>
       </aside>
 
       {/* CENTER — the board */}
@@ -356,11 +361,6 @@ export default function Review() {
         <CriticalMoments analysis={analysis} onSelect={go} selectedPly={selectedPly} />
         <MoveList moves={analysis.moves} selectedPly={selectedPly} onSelect={go} />
         <ExportMenu analysis={analysis} focusColor={focusColor} currentFen={fen} />
-        <div className="re-analyze">
-          <button onClick={() => runAnalysis(analysis.game, focusColor === 'w' ? 'b' : 'w')}>
-            {t('review.analyzeFromSide', { side: focusColor === 'w' ? t('review.sideBlack') : t('review.sideWhite') })}
-          </button>
-        </div>
       </aside>
     </main>
   );

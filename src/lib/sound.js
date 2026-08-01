@@ -11,6 +11,7 @@ export function setSoundOn(on) {
   try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch { /* quota */ }
 }
 
+let queueT = 0; // monotonic scheduling cursor so rapid sounds don't stack on one timestamp
 function actx() {
   if (!ctx) ctx = new (window.AudioContext || window['webkitAudioContext'])();
   return ctx;
@@ -63,7 +64,9 @@ export function playSound(kind = 'move') {
   try {
     const c = actx();
     if (c.state === 'suspended') c.resume();
-    const t = c.currentTime;
+    // Give each sound its own slot; never stack two on the same timestamp.
+    const t = Math.max(c.currentTime + 0.02, queueT);
+    queueT = t + 0.16;
     switch (kind) {
       case 'capture':
         thock(c, t, { freq: 140, cutoff: 2200, dur: 0.09, vol: 0.32 });
