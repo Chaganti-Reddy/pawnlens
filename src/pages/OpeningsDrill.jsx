@@ -3,11 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { useReviewer } from '../context/ReviewerContext.jsx';
-import { BOARD_THEMES } from '../lib/theme.js';
+import { BOARD_THEMES, getHints } from '../lib/theme.js';
 import { piecesFor } from '../lib/pieces.jsx';
 import { playMove } from '../lib/sound.js';
 import { loadHistory } from '../lib/storage.js';
 import { FaBook, FaCircleXmark, FaCircleCheck, FaArrowLeftLong, FaMagnifyingGlass, FaLightbulb } from '../ui/icons.js';
+
+const DOT = 'radial-gradient(circle, rgba(0,0,0,0.28) 20%, transparent 22%)';
 
 const POPULAR = [
   'Ruy Lopez', 'Italian Game', 'Sicilian Defense', 'French Defense', 'Caro-Kann Defense',
@@ -20,27 +22,49 @@ function movesOf(pgn) {
   try { const c = new Chess(); c.loadPgn(pgn); return c.history(); } catch { return []; }
 }
 
-function OpeningRunner({ opening, boardKey, pieceSetKey, onExit, t }) {
+function OpeningRunner({ opening, boardKey, pieceSetKey, userSide, onExit, t }) {
   const board = BOARD_THEMES[boardKey];
   const moves = useMemo(() => movesOf(opening.pgn), [opening]);
   const [idx, setIdx] = useState(0);
   const [status, setStatus] = useState('play'); // play | wrong | done
   const [hint, setHint] = useState(false);
+  const [hintSquares, setHintSquares] = useState({});
 
   const fenAt = (n) => { const c = new Chess(); for (let i = 0; i < n; i++) c.move(moves[i]); return c.fen(); };
   const fen = fenAt(idx);
-  const orientation = idx % 2 === 0 ? 'white' : 'black';
+  const done = idx >= moves.length;
+  const myTurn = !done && (idx % 2 === 0 ? 'w' : 'b') === userSide;
+
+  // The bot plays the opponent's book move automatically.
+  useEffect(() => {
+    if (done || myTurn) return;
+    const id = setTimeout(() => { playMove(); setIdx((n) => n + 1); }, 500);
+    return () => clearTimeout(id);
+  }, [idx, done, myTurn]);
+
+  useEffect(() => { if (done) setStatus('done'); }, [done]);
+
+  const onSquareClick = ({ square }) => {
+    if (!getHints() || !myTurn) { setHintSquares({}); return; }
+    try {
+      const c = new Chess(fen);
+      const p = c.get(square);
+      if (!p || p.color !== userSide) { setHintSquares({}); return; }
+      const styles = {};
+      for (const m of c.moves({ square, verbose: true })) styles[m.to] = { background: DOT };
+      setHintSquares(styles);
+    } catch { setHintSquares({}); }
+  };
 
   const onDrop = ({ sourceSquare, targetSquare }) => {
-    if (status === 'done') return false;
+    setHintSquares({});
+    if (done || !myTurn) return false;
     let mv;
     try { const c = new Chess(fen); mv = c.move({ from: sourceSquare, to: targetSquare, promotion: 'q' }); } catch { return false; }
     if (!mv) return false;
     if (mv.san === moves[idx]) {
       playMove(!!mv.captured);
-      const n = idx + 1;
-      setIdx(n); setHint(false);
-      setStatus(n >= moves.length ? 'done' : 'play');
+      setIdx((n) => n + 1); setHint(false);
     } else {
       setStatus('wrong');
       setTimeout(() => setStatus('play'), 800);
@@ -49,9 +73,9 @@ function OpeningRunner({ opening, boardKey, pieceSetKey, onExit, t }) {
   };
 
   const options = {
-    id: 'openings', position: fen, boardOrientation: orientation,
-    allowDragging: status !== 'done', showNotation: true, showAnimations: true, onPieceDrop: onDrop,
-    pieces: piecesFor(pieceSetKey),
+    id: 'openings', position: fen, boardOrientation: userSide === 'b' ? 'black' : 'white',
+    allowDragging: myTurn, showNotation: true, showAnimations: true, onPieceDrop: onDrop,
+    squareStyles: hintSquares, onSquareClick, pieces: piecesFor(pieceSetKey),
     darkSquareStyle: { backgroundColor: board.dark }, lightSquareStyle: { backgroundColor: board.light },
   };
 
@@ -92,6 +116,7 @@ export default function OpeningsDrill() {
   const { boardThemeKey, pieceSetKey } = useReviewer();
   const [query, setQuery] = useState('');
   const [chosen, setChosen] = useState(null);
+  const [side, setSide] = useState('w');
   const [openings, setOpenings] = useState(null);
 
   useEffect(() => { import('../data/openings.json').then((m) => setOpenings(m.default)); }, []);
@@ -119,7 +144,7 @@ export default function OpeningsDrill() {
     }).filter(Boolean);
   }, [openings]);
 
-  if (chosen) return <OpeningRunner opening={chosen} boardKey={boardThemeKey} pieceSetKey={pieceSetKey} onExit={() => setChosen(null)} t={t} />;
+  if (chosen) return <OpeningRunner opening={chosen} boardKey={boardThemeKey} pieceSetKey={pieceSetKey} userSide={side} onExit={() => setChosen(null)} t={t} />;
 
   const random = () => openings && setChosen(openings[Math.floor(Math.random() * openings.length)]);
 
@@ -138,6 +163,12 @@ export default function OpeningsDrill() {
           autoFocus
         />
         <button className="primary" onClick={random}><FaMagnifyingGlass /> {t('openings.random')}</button>
+      </div>
+
+      <div className="side-choice">
+        <span className="muted">{t('openings.playAs')}</span>
+        <button className={side === 'w' ? 'on' : ''} onClick={() => setSide('w')}>{t('review.sideWhite')}</button>
+        <button className={side === 'b' ? 'on' : ''} onClick={() => setSide('b')}>{t('review.sideBlack')}</button>
       </div>
 
       {!query && mine.length > 0 && (
