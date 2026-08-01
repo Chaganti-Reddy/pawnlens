@@ -183,6 +183,9 @@
     "solvedBefore": "solved before",
     "filterAll": "All puzzles",
     "filterMistakes": "My mistakes",
+    "filterEndgames": "Endgame puzzles",
+    "filterMates": "Checkmates",
+    "filterMiddlegame": "Middlegame",
     "yourGame": "From your game · {{from}}"
   },
   "endgames": {

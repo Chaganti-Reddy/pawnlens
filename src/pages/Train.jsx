@@ -64,7 +64,13 @@ export default function Train() {
     let all;
     if (filter === 'mistakes') all = mistakes;
     else if (filter === 'all') all = [...mistakes, ...tactics];
-    else all = tactics.filter((p) => p.pattern === filter);
+    else if (filter.startsWith('theme:')) {
+      const th = filter.slice(6);
+      all = data.puzzles.filter((p) => (p.themes || []).includes(th)).map((p) => ({
+        id: p.id, fen: p.fen, line: p.line, source: 'tactic',
+        rating: p.rating, label: patterns.find((x) => x.id === p.pattern)?.name || 'Tactic', pattern: p.pattern,
+      }));
+    } else all = tactics.filter((p) => p.pattern === filter);
     return all;
   }, [data, filter, catParam, patterns]);
 
@@ -166,6 +172,9 @@ export default function Train() {
         <select className="count-pick" value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="all">{t('train.filterAll')}</option>
           <option value="mistakes">{t('train.filterMistakes')}</option>
+          <option value="theme:endgame">{t('train.filterEndgames')}</option>
+          <option value="theme:mate">{t('train.filterMates')}</option>
+          <option value="theme:middlegame">{t('train.filterMiddlegame')}</option>
           {patterns.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
 
