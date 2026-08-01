@@ -3,11 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { useReviewer } from '../context/ReviewerContext.jsx';
-import { BOARD_THEMES } from '../lib/theme.js';
+import { BOARD_THEMES, getHints } from '../lib/theme.js';
 import { piecesFor } from '../lib/pieces.jsx';
 import { playMove } from '../lib/sound.js';
 import ENDGAMES from '../data/endgames.json';
 import { FaArrowLeftLong, FaCircleCheck, FaCircleXmark } from '../ui/icons.js';
+
+const DOT = { background: 'radial-gradient(circle, rgba(0,0,0,0.28) 20%, transparent 22%)' };
 
 function Runner({ eg, boardKey, onExit, t }) {
   const board = BOARD_THEMES[boardKey];
@@ -15,7 +17,20 @@ function Runner({ eg, boardKey, onExit, t }) {
   const gameRef = useRef(new Chess(eg.fen));
   const [fen, setFen] = useState(eg.fen);
   const [status, setStatus] = useState('play'); // play | thinking | won | drawn | lost
+  const [hintSquares, setHintSquares] = useState({});
   const side = eg.fen.split(' ')[1];
+
+  const onSquareClick = ({ square }) => {
+    if (!getHints() || status !== 'play') { setHintSquares({}); return; }
+    try {
+      const g = gameRef.current;
+      const p = g.get(square);
+      if (!p || p.color !== g.turn()) { setHintSquares({}); return; }
+      const styles = {};
+      for (const m of g.moves({ square, verbose: true })) styles[m.to] = DOT;
+      setHintSquares(styles);
+    } catch { setHintSquares({}); }
+  };
 
   const reset = () => { gameRef.current = new Chess(eg.fen); setFen(eg.fen); setStatus('play'); };
 
@@ -39,6 +54,7 @@ function Runner({ eg, boardKey, onExit, t }) {
   };
 
   const onDrop = ({ sourceSquare, targetSquare }) => {
+    setHintSquares({});
     if (status !== 'play') return false;
     const g = gameRef.current;
     let mv;
@@ -55,7 +71,7 @@ function Runner({ eg, boardKey, onExit, t }) {
   const options = {
     id: 'endgame', position: fen, boardOrientation: side === 'b' ? 'black' : 'white',
     allowDragging: status === 'play', showNotation: true, showAnimations: true, onPieceDrop: onDrop,
-    pieces: piecesFor(pieceSetKey),
+    squareStyles: hintSquares, onSquareClick, pieces: piecesFor(pieceSetKey),
     darkSquareStyle: { backgroundColor: board.dark }, lightSquareStyle: { backgroundColor: board.light },
   };
 
