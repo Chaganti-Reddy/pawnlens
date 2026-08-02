@@ -20,6 +20,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/review" element={<Review />} />
+              <Route path="/review/:gid" element={<Review />} />
               <Route path="/train" element={<Train />} />
               <Route path="/endgames" element={<Endgames />} />
               <Route path="/openings" element={<OpeningsDrill />} />

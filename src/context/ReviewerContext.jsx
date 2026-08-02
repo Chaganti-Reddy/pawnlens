@@ -93,7 +93,7 @@ export function ReviewerProvider({ children }) {
     setBatch(null);
     setProgress({ done: 0, total: 1 });
     setEngineStatus('loading');
-    navigate('/review');
+    navigate(game.gameId ? `/review/${game.gameId}` : '/review');
     try {
       const eng = await ensureEngine();
       setEngineStatus('ready');

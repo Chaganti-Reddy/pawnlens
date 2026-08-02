@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
@@ -20,6 +20,7 @@ import { playMove, playSound, soundForSan } from '../lib/sound.js';
 import { parseSharedGame } from '../lib/share.js';
 import { hangingSquares } from '../lib/threats.js';
 import { outcomeText } from '../lib/outcome.js';
+import { loadHistory } from '../lib/storage.js';
 import { FaAngleLeft, FaAngleRight, FaAnglesLeft, FaAnglesRight, FaArrowLeftLong, FaDumbbell, FaCircleCheck, FaCircleXmark } from '../ui/icons.js';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -28,18 +29,20 @@ export default function Review() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [params] = useSearchParams();
+  const { gid } = useParams();
   const { analysis, focusColor, progress, engineStatus, selectedPly, setSelectedPly, runAnalysis, runAnalysisFromPgn, getTopMoves, boardThemeKey, pieceSetKey } = useReviewer();
 
-  // Shared link: decode PGN from the URL and analyze it once.
-  const sharedLoaded = useRef(false);
+  // Load the game: a shared PGN in the URL, or a stored game by its id (/review/:gid).
+  const loaded = useRef(false);
   useEffect(() => {
-    if (sharedLoaded.current || analysis || progress.total > 0) return;
+    if (loaded.current || analysis || progress.total > 0) return;
     const shared = parseSharedGame(params.toString());
-    if (shared) {
-      sharedLoaded.current = true;
-      runAnalysisFromPgn(shared.pgn, shared.side);
+    if (shared) { loaded.current = true; runAnalysisFromPgn(shared.pgn, shared.side); return; }
+    if (gid) {
+      const g = loadHistory().find((h) => h.gameId === gid);
+      if (g?.pgn) { loaded.current = true; runAnalysisFromPgn(g.pgn, g.focusColor); }
     }
-  }, [params, analysis, progress.total, runAnalysisFromPgn]);
+  }, [params, gid, analysis, progress.total, runAnalysisFromPgn]);
 
   const total = analysis?.moves.length ?? 0;
 
@@ -113,7 +116,7 @@ export default function Review() {
 
   const analyzing = !analysis || progress.done < progress.total;
   const loadingPct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
-  const hasSharedParam = !!params.get('g');
+  const hasSharedParam = !!params.get('g') || !!gid;
 
   if (!analysis && engineStatus === 'ready' && progress.total === 0 && !hasSharedParam) return <Navigate to="/" replace />;
 

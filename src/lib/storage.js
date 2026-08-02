@@ -46,6 +46,7 @@ export function summarize(game, result, focusColor) {
     url: game.url || '',
     opening: game.opening || '',
     pgn: game.pgn || '',
+    gameId: game.gameId || '',
     savedAt: Date.now(),
     focusColor,
     focusName: focusColor === 'w' ? game.white : game.black,

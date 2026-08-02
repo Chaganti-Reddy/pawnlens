@@ -97,6 +97,7 @@ export async function fetchChessComGames(username, count = 20) {
         timeClass: g.time_class || '',
         timeControl: g.time_control || '',
         url: g.url || '',
+        gameId: g.url ? `cc-${g.url.split('/').pop()}` : '',
         source: 'chess.com',
       };
       games.push(withUserView(base, user));
@@ -124,7 +125,11 @@ export async function fetchLichessGames(username, count = 20) {
   const text = await res.text();
   const list = splitPgns(text);
   if (!list.length) throw new Error(t('errors.noGames', { site, name: user }));
-  return list.map((pgn) => withUserView({ ...pgnMeta(pgn), timeClass: guessLichessTimeClass(pgn), source: 'lichess' }, user));
+  return list.map((pgn) => {
+    const meta = pgnMeta(pgn);
+    const gameId = meta.site ? `li-${meta.site.split('/').pop()}` : '';
+    return withUserView({ ...meta, gameId, timeClass: guessLichessTimeClass(pgn), source: 'lichess' }, user);
+  });
 }
 
 function guessLichessTimeClass(pgn) {
