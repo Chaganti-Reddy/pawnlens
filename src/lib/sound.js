@@ -1,8 +1,10 @@
-// Synthesized chess sounds via Web Audio — no audio files, no licensing, offline.
-// A short filtered-noise "thock" (piece hitting the board) plus a body thump,
-// with distinct variants per event. Toggle with the settings menu.
+// Synthesized chess sounds via pre-rendered AudioBuffers. Each sound is rendered
+// once into a buffer, then played fire-and-forget through a fresh BufferSource —
+// so every play is identical volume with no scheduling drift. No audio files.
 const KEY = 'pawnlens.sound';
 let ctx = null;
+const buffers = {};
+const DUR = 0.26;
 
 export function isSoundOn() {
   return localStorage.getItem(KEY) !== 'off';
@@ -11,52 +13,51 @@ export function setSoundOn(on) {
   try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch { /* quota */ }
 }
 
-let queueT = 0; // monotonic scheduling cursor so rapid sounds don't stack on one timestamp
 function actx() {
   if (!ctx) ctx = new (window.AudioContext || window['webkitAudioContext'])();
   return ctx;
 }
 
-function noise(c, dur) {
-  const buf = c.createBuffer(1, Math.ceil(c.sampleRate * dur), c.sampleRate);
+// A "thock": pitched body + lowpassed noise transient, exponential decay.
+function addThock(d, sr, { f, tau, noise, delay = 0 }) {
+  let lp = 0;
+  for (let i = 0; i < d.length; i++) {
+    const t = i / sr - delay;
+    const rnd = Math.random() * 2 - 1;
+    lp += 0.15 * (rnd - lp);
+    if (t < 0) continue;
+    const env = Math.exp(-t / tau);
+    d[i] += env * (0.55 * Math.sin(2 * Math.PI * f * t) + noise * lp);
+  }
+}
+function addTone(d, sr, { f, tau, amp = 0.4, delay = 0, square = false }) {
+  for (let i = 0; i < d.length; i++) {
+    const t = i / sr - delay;
+    if (t < 0) continue;
+    const env = Math.exp(-t / tau);
+    const s = Math.sin(2 * Math.PI * f * t);
+    d[i] += amp * env * (square ? Math.sign(s) : s);
+  }
+}
+
+function render(kind) {
+  const c = actx();
+  const sr = c.sampleRate;
+  const buf = c.createBuffer(1, Math.ceil(sr * DUR), sr);
   const d = buf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  switch (kind) {
+    case 'capture': addThock(d, sr, { f: 130, tau: 0.04, noise: 0.9 }); break;
+    case 'check': addThock(d, sr, { f: 170, tau: 0.025, noise: 0.3 }); addTone(d, sr, { f: 1180, tau: 0.09, amp: 0.3, delay: 0.02 }); break;
+    case 'castle': addThock(d, sr, { f: 170, tau: 0.03, noise: 0.5 }); addThock(d, sr, { f: 150, tau: 0.03, noise: 0.5, delay: 0.09 }); break;
+    case 'promote': addTone(d, sr, { f: 660, tau: 0.08, amp: 0.35 }); addTone(d, sr, { f: 880, tau: 0.08, amp: 0.35, delay: 0.06 }); addTone(d, sr, { f: 1245, tau: 0.1, amp: 0.35, delay: 0.12 }); break;
+    case 'error': addTone(d, sr, { f: 150, tau: 0.1, amp: 0.4, square: true }); break;
+    default: addThock(d, sr, { f: 175, tau: 0.03, noise: 0.5 });
+  }
+  // normalize to avoid clipping
+  let peak = 0;
+  for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
+  if (peak > 1) for (let i = 0; i < d.length; i++) d[i] /= peak;
   return buf;
-}
-
-// One "thock": a noise transient through a lowpass + a pitched body thump.
-function thock(c, t, { freq, cutoff, dur, vol }) {
-  const nb = c.createBufferSource();
-  nb.buffer = noise(c, dur);
-  const lp = c.createBiquadFilter();
-  lp.type = 'lowpass';
-  lp.frequency.value = cutoff;
-  const ng = c.createGain();
-  ng.gain.setValueAtTime(vol, t);
-  ng.gain.exponentialRampToValueAtTime(0.0008, t + dur);
-  nb.connect(lp).connect(ng).connect(c.destination);
-  nb.start(t); nb.stop(t + dur);
-
-  const o = c.createOscillator();
-  o.type = 'sine';
-  o.frequency.setValueAtTime(freq, t);
-  o.frequency.exponentialRampToValueAtTime(freq * 0.6, t + dur);
-  const og = c.createGain();
-  og.gain.setValueAtTime(vol * 0.7, t);
-  og.gain.exponentialRampToValueAtTime(0.0008, t + dur);
-  o.connect(og).connect(c.destination);
-  o.start(t); o.stop(t + dur);
-}
-
-function tone(c, t, freq, dur, vol, type = 'sine') {
-  const o = c.createOscillator();
-  o.type = type;
-  o.frequency.value = freq;
-  const g = c.createGain();
-  g.gain.setValueAtTime(vol, t);
-  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
-  o.connect(g).connect(c.destination);
-  o.start(t); o.stop(t + dur);
 }
 
 export function playSound(kind = 'move') {
@@ -64,36 +65,16 @@ export function playSound(kind = 'move') {
   try {
     const c = actx();
     if (c.state === 'suspended') c.resume();
-    // Give each sound its own slot; never stack two on the same timestamp.
-    const t = Math.max(c.currentTime + 0.02, queueT);
-    queueT = t + 0.16;
-    switch (kind) {
-      case 'capture':
-        thock(c, t, { freq: 140, cutoff: 2200, dur: 0.09, vol: 0.32 });
-        break;
-      case 'check':
-        thock(c, t, { freq: 170, cutoff: 900, dur: 0.06, vol: 0.2 });
-        tone(c, t + 0.02, 1180, 0.12, 0.12, 'triangle');
-        break;
-      case 'castle':
-        thock(c, t, { freq: 170, cutoff: 800, dur: 0.06, vol: 0.22 });
-        thock(c, t + 0.09, { freq: 150, cutoff: 800, dur: 0.06, vol: 0.22 });
-        break;
-      case 'promote':
-        tone(c, t, 660, 0.09, 0.12, 'triangle');
-        tone(c, t + 0.08, 880, 0.09, 0.12, 'triangle');
-        tone(c, t + 0.16, 1245, 0.12, 0.12, 'triangle');
-        break;
-      case 'error':
-        tone(c, t, 150, 0.14, 0.15, 'square');
-        break;
-      default: // move
-        thock(c, t, { freq: 175, cutoff: 850, dur: 0.07, vol: 0.24 });
-    }
+    const buf = buffers[kind] || (buffers[kind] = render(kind));
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const g = c.createGain();
+    g.gain.value = 0.85;
+    src.connect(g).connect(c.destination);
+    src.start();
   } catch { /* audio unavailable */ }
 }
 
-// Pick a sound from a SAN string.
 export function soundForSan(san) {
   if (!san) return 'move';
   if (san.startsWith('O-O')) return 'castle';
@@ -103,7 +84,6 @@ export function soundForSan(san) {
   return 'move';
 }
 
-// Back-compat helper used by older callers.
 export function playMove(capture = false) {
   playSound(capture ? 'capture' : 'move');
 }
