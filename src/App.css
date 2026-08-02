@@ -199,8 +199,10 @@
 }
 .chip-dot { width: 8px; height: 8px; border-radius: 50%; }
 
+.coach-wrap { display: flex; gap: 10px; align-items: flex-start; }
+.coach-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #14210f; flex-shrink: 0; font-size: 18px; margin-top: 2px; }
 .coach {
-  background: var(--bg2); border-left: 4px solid var(--line); border-radius: 8px; padding: 12px 14px;
+  flex: 1; background: var(--bg2); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 8px; padding: 12px 14px;
 }
 .coach-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .coach-move { font-weight: 700; font-size: 15px; }
@@ -287,6 +289,10 @@
 .hm-col.sel .hm-bar { background: var(--accent); }
 
 /* openings list */
+.side-choice { display: flex; align-items: center; gap: 8px; margin: 14px 0 4px; }
+.side-choice button { padding: 7px 16px; background: var(--bg2); border: 1px solid var(--line); color: var(--muted); border-radius: 8px; cursor: pointer; font-size: 13px; }
+.side-choice button.on { color: var(--text); border-color: var(--accent2); background: var(--bg3); }
+
 .op-section { margin: 20px 0 10px; }
 .op-list { display: flex; flex-direction: column; gap: 6px; }
 .op-item { display: flex; align-items: center; gap: 12px; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; cursor: pointer; color: var(--text); text-align: left; }

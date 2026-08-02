@@ -31,5 +31,6 @@ export {
   FaCircleXmark,
   FaChessBoard,
   FaBook,
+  FaChalkboardUser,
 } from 'react-icons/fa6';
 export { SiChessdotcom, SiLichess } from 'react-icons/si';
