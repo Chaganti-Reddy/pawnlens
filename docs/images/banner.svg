@@ -17,11 +17,11 @@
   <g font-family="Segoe UI, Helvetica, Arial, sans-serif">
     <text x="240" y="150" font-size="72" font-weight="800" fill="#e8e6e3">PawnLens</text>
     <text x="244" y="196" font-size="26" fill="#a7a29b">Free, unlimited chess game review &#8212; in your browser, no login, no limits.</text>
-    <g transform="translate(244,232)" font-size="18" fill="#cfe8c4">
-      <rect x="0" y="0" width="150" height="34" rx="17" fill="#33322d"/><text x="75" y="18" text-anchor="middle" dominant-baseline="central" fill="#9bcf6b">Stockfish&#160;18 &#183; WASM</text>
-      <rect x="164" y="0" width="132" height="34" rx="17" fill="#33322d"/><text x="230" y="18" text-anchor="middle" dominant-baseline="central" fill="#7fd8c6">Plain-English coach</text>
-      <rect x="308" y="0" width="150" height="34" rx="17" fill="#33322d"/><text x="383" y="18" text-anchor="middle" dominant-baseline="central" fill="#9bcf6b">3,300+ tactics</text>
-      <rect x="470" y="0" width="176" height="34" rx="17" fill="#33322d"/><text x="558" y="18" text-anchor="middle" dominant-baseline="central" fill="#7fd8c6">Weakness analyzer</text>
+    <g transform="translate(244,232)" font-size="17" font-weight="600">
+      <rect x="0" y="0" width="210" height="36" rx="18" fill="#33322d"/><text x="105" y="19" text-anchor="middle" dominant-baseline="central" fill="#9bcf6b">Stockfish&#160;18 &#183; WASM</text>
+      <rect x="224" y="0" width="200" height="36" rx="18" fill="#33322d"/><text x="324" y="19" text-anchor="middle" dominant-baseline="central" fill="#7fd8c6">Plain-English coach</text>
+      <rect x="438" y="0" width="180" height="36" rx="18" fill="#33322d"/><text x="528" y="19" text-anchor="middle" dominant-baseline="central" fill="#9bcf6b">11,000+ tactics</text>
+      <rect x="632" y="0" width="196" height="36" rx="18" fill="#33322d"/><text x="730" y="19" text-anchor="middle" dominant-baseline="central" fill="#7fd8c6">Weakness analyzer</text>
     </g>
   </g>
 </svg>

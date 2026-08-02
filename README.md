@@ -35,7 +35,6 @@ Most sites gate real game review behind a paywall (chess.com allows ~1 free revi
 - [Tech stack](#tech-stack)
 - [Project structure](#project-structure)
 - [Data & attribution](#data--attribution)
-- [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -58,7 +57,7 @@ Most sites gate real game review behind a paywall (chess.com allows ~1 free revi
 - **Auto-narration**, move sounds, board & piece themes, light/dark, keyboard nav.
 
 **Train**
-- One ranked queue mixing **your own blunders** and a **3,300-puzzle tactics bank** (themes + ratings), scheduled with **FSRS** spaced repetition and an adjusting **puzzle rating**.
+- One ranked queue mixing **your own blunders** and an **11,000-puzzle tactics bank** (themes + ratings), scheduled with **FSRS** spaced repetition and an adjusting **puzzle rating**.
 - Filter by theme (endgames, mates, middlegame) or drill a specific weakness in one click.
 
 **Openings & endgames**
@@ -157,15 +156,21 @@ PawnLens is **not affiliated with** chess.com or lichess; it only uses their pub
 
 ## Screenshots
 
-> Drop UI captures into `docs/images/` and they'll render here. The review page is a three-column study view: **This move** (win %, coach, engine lines) · **Board** (eval bar, arrows, controls) · **Whole game** (result, turning points, move list).
+**Game review** — three-column study view: *This move* (win %, coach, engine lines) · *Board* (eval bar, arrows, controls) · *Whole game* (result, turning points, move list).
 
-## Roadmap
+![Game review](docs/images/review.jpeg)
 
-- [ ] One-click deploy config (Cloudflare Pages / GitHub Pages) + SPA fallback
-- [ ] More coach motifs (discovered attacks, overloaded pieces, zugzwang)
-- [ ] Optional bring-your-own-key LLM coaching
-- [ ] More piece sets and board themes
-- [ ] Progressive Web App (offline install)
+**Train** — your mistakes + an 11k tactics bank in one FSRS-scheduled queue, with an adjusting puzzle rating.
+
+![Train](docs/images/train.jpeg)
+
+**Weakness analyzer** — recurring mistakes with the exact evidence, and one-click drilling.
+
+![Weaknesses](docs/images/weakness.jpeg)
+
+**Start a review** — by username, or paste/upload a PGN.
+
+![Home](docs/images/home.jpeg)
 
 ## Contributing
 
