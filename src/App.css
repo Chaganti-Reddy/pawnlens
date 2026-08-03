@@ -152,6 +152,34 @@
 .result-card.r-ongoing { border-left-color: var(--accent2); }
 .rc-score { font-weight: 800; font-size: 16px; }
 .rc-text { color: var(--muted); font-size: 13px; }
+.rc-report { margin-left: auto; background: none; border: 1px solid var(--accent2); color: var(--text); border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 12px; white-space: nowrap; }
+.rc-report:hover { background: var(--bg3); }
+
+/* animated game report */
+.gr-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 60; animation: grFade 0.25s ease; padding: 16px; }
+.gr-card { position: relative; width: 560px; max-width: 100%; max-height: 92vh; overflow-y: auto; background: var(--bg2); border: 1px solid var(--line); border-radius: 16px; padding: 26px; text-align: center; animation: grPop 0.35s cubic-bezier(0.2,0.8,0.3,1.1); }
+.gr-close { position: absolute; top: 12px; right: 12px; }
+.gr-title { display: inline-flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 800; }
+.gr-title svg { color: var(--accent); }
+.gr-opening { color: var(--muted); font-size: 14px; margin-top: 4px; }
+.gr-sides { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: center; margin: 22px 0 12px; }
+.gr-side { background: var(--bg3); border: 1px solid var(--line); border-radius: 12px; padding: 16px 12px; }
+.gr-side.focus { border-color: var(--accent); }
+.gr-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gr-acc { font-size: 40px; font-weight: 800; line-height: 1.1; margin-top: 6px; }
+.gr-sub { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.gr-meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.gr-tags { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; font-size: 12px; align-items: flex-start; }
+.gr-chip { display: inline-flex; align-items: center; gap: 6px; }
+.gr-dot { width: 8px; height: 8px; border-radius: 50%; }
+.gr-vs { font-weight: 800; font-size: 18px; color: var(--muted); }
+.gr-bar { height: 10px; border-radius: 5px; overflow: hidden; background: #3a3835; display: flex; }
+.gr-bar-w { background: #f4f4f4; transition: width 0.9s cubic-bezier(0.2,0.8,0.3,1); }
+.gr-moment { margin: 16px 0; font-size: 14px; }
+.gr-moment-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 2px; }
+.gr-go { margin-top: 8px; width: 100%; justify-content: center; }
+@keyframes grFade { from { opacity: 0; } }
+@keyframes grPop { from { opacity: 0; transform: translateY(20px) scale(0.96); } }
 
 @media (max-width: 1180px) {
   .review-view.three-col { grid-template-columns: 1fr; max-width: 640px; }

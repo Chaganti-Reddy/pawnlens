@@ -14,6 +14,7 @@ import CriticalMoments from '../components/CriticalMoments.jsx';
 import EngineLines from '../components/EngineLines.jsx';
 import ExportMenu from '../components/ExportMenu.jsx';
 import Takeaway from '../components/Takeaway.jsx';
+import GameReport from '../components/GameReport.jsx';
 import { BOARD_THEMES } from '../lib/theme.js';
 import { piecesFor } from '../lib/pieces.jsx';
 import { playMove, playSound, soundForSan } from '../lib/sound.js';
@@ -57,6 +58,10 @@ export default function Review() {
   const [showThreats, setShowThreats] = useState(false);
   const [threatArrow, setThreatArrow] = useState(null);
   const [narrate, setNarrate] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+
+  // Pop the animated game report whenever a fresh analysis lands.
+  useEffect(() => { if (analysis) setShowReport(true); }, [analysis]);
 
   // Free explore / analysis board.
   const [explore, setExplore] = useState(false);
@@ -349,6 +354,7 @@ export default function Review() {
         <div className={`result-card r-${oc.winner}`}>
           <span className="rc-score">{oc.result}</span>
           <span className="rc-text">{resultLine}</span>
+          <button className="rc-report" onClick={() => setShowReport(true)}>{t('report.open')}</button>
         </div>
         <Takeaway analysis={analysis} focusColor={focusColor} />
         <div className="acc-cards">
@@ -365,6 +371,8 @@ export default function Review() {
         <MoveList moves={analysis.moves} selectedPly={selectedPly} onSelect={go} />
         <ExportMenu analysis={analysis} focusColor={focusColor} currentFen={fen} />
       </aside>
+
+      {showReport && <GameReport analysis={analysis} focusColor={focusColor} onClose={() => setShowReport(false)} />}
     </main>
   );
 }

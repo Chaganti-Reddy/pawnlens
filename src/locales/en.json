@@ -16,6 +16,15 @@
   "common": {
     "close": "Close"
   },
+  "report": {
+    "title": "Game report",
+    "open": "Game report",
+    "accuracy": "Accuracy",
+    "est": "≈ {{n}}",
+    "acpl": "{{n}} ACPL",
+    "turningPoint": "Turning point",
+    "startReview": "Start review"
+  },
   "settings": {
     "title": "Settings",
     "theme": "Theme",
