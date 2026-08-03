@@ -1,6 +1,35 @@
 import { Chess } from 'chess.js';
-import { winPct, classifyMove, gameAccuracy, ratingFromAccuracy, TAGS } from './classify.js';
+import { winPct, scoreToCp, classifyMove, ratingFromAccuracy, TAGS } from './classify.js';
 import { coachNote } from './coach.js';
+
+// White-perspective win% (0..100) from a white-perspective eval.
+function whiteWin(ev) {
+  const cp = ev?.mate != null ? (ev.mate > 0 ? 10000 : -10000) : (ev?.cp ?? 0);
+  return 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cp)) - 1);
+}
+
+// Lichess-style accuracy for one colour: blend of a volatility-weighted mean and
+// a harmonic mean of the per-move accuracies. Volatile positions weigh more.
+function colorAccuracy(moves, color, whiteWinSeries) {
+  const mine = moves.filter((m) => m.color === color);
+  if (!mine.length) return 0;
+  const accs = mine.map((m) => Math.max(1, m.accuracy));
+  const n = whiteWinSeries.length;
+  const win = Math.min(8, Math.max(2, Math.round(n / 10)));
+  const weights = mine.map((m) => {
+    const center = m.ply + 1;
+    const slice = whiteWinSeries.slice(Math.max(0, center - win), Math.min(n, center + 1));
+    const mean = slice.reduce((a, b) => a + b, 0) / slice.length;
+    const variance = slice.reduce((a, b) => a + (b - mean) ** 2, 0) / slice.length;
+    return Math.max(0.5, Math.sqrt(variance));
+  });
+  const wSum = weights.reduce((a, b) => a + b, 0);
+  const weighted = accs.reduce((s, a, i) => s + a * weights[i], 0) / wSum;
+  const harmonic = accs.length / accs.reduce((s, a) => s + 1 / a, 0);
+  return (weighted + harmonic) / 2;
+}
+
+function mean(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
 
 // Convert a UCI line to SAN, played out from `fen`. Returns up to `max` moves.
 function uciLineToSan(fen, uciLine, max = 6) {
@@ -50,13 +79,15 @@ export async function analyzeGame(pgn, { engine, depth = 12, onProgress } = {}) 
     return { cp: whiteToMove ? e.cp : -(e.cp ?? 0) };
   };
 
-  const accByColor = { w: [], b: [] };
   const accByPhase = { w: { opening: [], middlegame: [], endgame: [] }, b: { opening: [], middlegame: [], endgame: [] } };
+  const cpLossByColor = { w: [], b: [] };
   const moves = verbose.map((m, i) => {
     const before = evals[i];
     const after = evals[i + 1];
     const moverWinBefore = winPct(before);
     const moverWinAfter = 100 - winPct(after);
+    const cpLoss = Math.min(1000, Math.max(0, scoreToCp(before) - -scoreToCp(after)));
+    cpLossByColor[m.color].push(cpLoss);
     const playedUci = m.from + m.to + (m.promotion || '');
 
     const chessAfter = new Chess(positions[i + 1]);
@@ -64,7 +95,6 @@ export async function analyzeGame(pgn, { engine, depth = 12, onProgress } = {}) 
       moverWinBefore, moverWinAfter, playedUci, bestUci: before.bestmove,
       chessAfter, toSquare: m.to, moverColor: m.color, movedPieceType: m.piece,
     });
-    accByColor[m.color].push(cls.accuracy);
     const phase = i < 16 ? 'opening' : i < 40 ? 'middlegame' : 'endgame';
     accByPhase[m.color][phase].push(cls.accuracy);
 
@@ -109,13 +139,16 @@ export async function analyzeGame(pgn, { engine, depth = 12, onProgress } = {}) 
   const counts = { w: {}, b: {} };
   for (const mv of moves) counts[mv.color][mv.tag] = (counts[mv.color][mv.tag] || 0) + 1;
 
+  const whiteWinSeries = evalSeries.map(whiteWin);
   const phaseAcc = (color) => ({
-    opening: gameAccuracy(accByPhase[color].opening),
-    middlegame: gameAccuracy(accByPhase[color].middlegame),
-    endgame: gameAccuracy(accByPhase[color].endgame),
+    opening: mean(accByPhase[color].opening),
+    middlegame: mean(accByPhase[color].middlegame),
+    endgame: mean(accByPhase[color].endgame),
   });
-  const accuracyWhite = gameAccuracy(accByColor.w);
-  const accuracyBlack = gameAccuracy(accByColor.b);
+  const accuracyWhite = colorAccuracy(moves, 'w', whiteWinSeries);
+  const accuracyBlack = colorAccuracy(moves, 'b', whiteWinSeries);
+  const acplWhite = Math.round(mean(cpLossByColor.w));
+  const acplBlack = Math.round(mean(cpLossByColor.b));
 
   return {
     moves,
@@ -126,6 +159,8 @@ export async function analyzeGame(pgn, { engine, depth = 12, onProgress } = {}) 
     accuracyBlack,
     ratingWhite: ratingFromAccuracy(accuracyWhite),
     ratingBlack: ratingFromAccuracy(accuracyBlack),
+    acplWhite,
+    acplBlack,
     accuracyByPhase: { w: phaseAcc('w'), b: phaseAcc('b') },
     counts,
   };
