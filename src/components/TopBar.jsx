@@ -24,7 +24,7 @@ export default function TopBar() {
         {analysis && <NavLink to="/review" className={cls}>{t('nav.review')}</NavLink>}
         <NavLink to="/train" className={cls}>
           {t('nav.train')}
-          {due > 0 && <span className="due-badge">{due}</span>}
+          {due > 0 && <span className="due-badge" title={t('nav.dueTitle', { n: due })}>{due > 99 ? '99+' : due}</span>}
         </NavLink>
         <NavLink to="/endgames" className={cls}>{t('nav.endgames')}</NavLink>
         <NavLink to="/openings" className={cls}>{t('nav.openings')}</NavLink>
