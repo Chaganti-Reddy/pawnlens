@@ -65,6 +65,19 @@ export async function analyzeGame(pgn, { engine, depth = 12, onProgress } = {}) 
 
   const evals = [];
   for (let i = 0; i < positions.length; i++) {
+    // A mated/stalemated position has no engine eval — score it ourselves.
+    const term = new Chess(positions[i]);
+    if (term.isCheckmate()) {
+      // side to move is checkmated (lost); score is side-to-move relative.
+      evals.push({ fen: positions[i], bestmove: null, cp: -30000, mate: null, pv: [] });
+      onProgress?.(i + 1, positions.length);
+      continue;
+    }
+    if (term.isStalemate() || term.isInsufficientMaterial() || term.isDraw()) {
+      evals.push({ fen: positions[i], bestmove: null, cp: 0, mate: null, pv: [] });
+      onProgress?.(i + 1, positions.length);
+      continue;
+    }
     const r = await engine.analyze(positions[i], { depth, multipv: 1 });
     const l0 = r.lines[0] || {};
     evals.push({ fen: positions[i], bestmove: r.bestmove, cp: l0.cp ?? null, mate: l0.mate ?? null, pv: l0.pv || [] });
