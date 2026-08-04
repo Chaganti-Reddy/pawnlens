@@ -346,6 +346,12 @@ export default function Review() {
           <button onClick={() => go(selectedPly + 1)} title={t('review.navNext')}><FaAngleRight /></button>
           <button onClick={() => go(total - 1)} title={t('review.navEnd')}><FaAnglesRight /></button>
         </div>
+        <button className="next-mistake" onClick={() => {
+          const nb = analysis.moves.find((m) => m.ply > selectedPly && m.color === focusColor && m.tagKind === 'bad');
+          if (nb) go(nb.ply);
+        }}>
+          <FaCircleXmark /> {t('review.nextMistake')}
+        </button>
       </div>
 
       {/* RIGHT — the whole game */}
@@ -367,7 +373,7 @@ export default function Review() {
             <div className="acc-lbl">{analysis.game.black}</div>
           </div>
         </div>
-        <CriticalMoments analysis={analysis} onSelect={go} selectedPly={selectedPly} />
+        <CriticalMoments analysis={analysis} focusColor={focusColor} onSelect={go} selectedPly={selectedPly} />
         <MoveList moves={analysis.moves} selectedPly={selectedPly} onSelect={go} />
         <ExportMenu analysis={analysis} focusColor={focusColor} currentFen={fen} />
       </aside>

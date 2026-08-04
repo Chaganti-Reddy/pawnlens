@@ -26,12 +26,14 @@ function useCountUp(target, dur = 850) {
   return v;
 }
 
-function biggestSwing(moves) {
+// The reviewed side's single biggest momentum swing.
+function biggestSwing(moves, focusColor) {
   let best = null;
   for (let i = 0; i < moves.length; i++) {
+    if (moves[i].color !== focusColor) continue;
     const before = i === 0 ? 50 : whiteWin(moves[i - 1].evalWhite);
     const after = whiteWin(moves[i].evalWhite);
-    const gain = moves[i].color === 'w' ? after - before : before - after;
+    const gain = focusColor === 'w' ? after - before : before - after;
     if (!best || Math.abs(gain) > Math.abs(best.gain)) best = { m: moves[i], gain };
   }
   return best;
@@ -44,7 +46,7 @@ export default function GameReport({ analysis, focusColor, onClose }) {
   const g = analysis.game;
   const accW = useCountUp(analysis.accuracyWhite);
   const accB = useCountUp(analysis.accuracyBlack);
-  const swing = biggestSwing(analysis.moves);
+  const swing = biggestSwing(analysis.moves, focusColor);
 
   const Side = ({ color, acc }) => {
     const rating = color === 'w' ? analysis.ratingWhite : analysis.ratingBlack;
