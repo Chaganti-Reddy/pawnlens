@@ -6,7 +6,7 @@ import { Chess } from 'chess.js';
 import { useReviewer } from '../context/ReviewerContext.jsx';
 import { collectPuzzles } from '../lib/storage.js';
 import { loadTactics } from '../lib/tactics.js';
-import { dueList, review, bestStreak, recordStreak } from '../lib/srs.js';
+import { dueList, review } from '../lib/srs.js';
 import { getPuzzleRating, updatePuzzleRating, isSolved, markSolved, solvedCount } from '../lib/progress.js';
 import { BOARD_THEMES, getHints } from '../lib/theme.js';
 import { piecesFor } from '../lib/pieces.jsx';
@@ -42,8 +42,6 @@ export default function Train() {
   const [status, setStatus] = useState('solving'); // solving | wrong | thinking | solved
   const [scored, setScored] = useState(false);
   const [hintSquares, setHintSquares] = useState({});
-  const [streak, setStreak] = useState(0);
-  const [best, setBest] = useState(bestStreak());
   const [rating, setRating] = useState(getPuzzleRating());
   const [delta, setDelta] = useState(null);
 
@@ -104,8 +102,7 @@ export default function Train() {
     const r = updatePuzzleRating(puzzle.rating, correct);
     setRating(r.rating); setDelta(r.delta);
     review(puzzle.id, correct);
-    if (correct) { markSolved(puzzle.id); const s = streak + 1; setStreak(s); setBest(recordStreak(s)); }
-    else setStreak(0);
+    if (correct) markSolved(puzzle.id);
   };
 
   const onDrop = ({ sourceSquare, targetSquare }) => {
@@ -166,7 +163,7 @@ export default function Train() {
             {t('train.rating', { n: rating })}
             {delta != null && <span className={`rd ${delta >= 0 ? 'up' : 'down'}`}>{delta >= 0 ? '+' : ''}{delta}</span>}
           </span>
-          <span className="train-streak">{t('train.streak', { n: streak })} · {t('train.best', { n: best })}</span>
+          <span className="train-solved">{t('train.solvedTotal', { n: solvedCount() })}</span>
         </div>
 
         <select className="count-pick" value={filter} onChange={(e) => setFilter(e.target.value)}>
