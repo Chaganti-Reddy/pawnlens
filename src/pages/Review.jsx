@@ -15,6 +15,7 @@ import EngineLines from '../components/EngineLines.jsx';
 import ExportMenu from '../components/ExportMenu.jsx';
 import Takeaway from '../components/Takeaway.jsx';
 import GameReport from '../components/GameReport.jsx';
+import EndCard from '../components/EndCard.jsx';
 import { BOARD_THEMES } from '../lib/theme.js';
 import { piecesFor } from '../lib/pieces.jsx';
 import { playMove, playSound, soundForSan } from '../lib/sound.js';
@@ -59,9 +60,21 @@ export default function Review() {
   const [threatArrow, setThreatArrow] = useState(null);
   const [narrate, setNarrate] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showEnd, setShowEnd] = useState(false);
+  const [showExit, setShowExit] = useState(false);
 
   // Pop the animated game report whenever a fresh analysis lands.
-  useEffect(() => { if (analysis) setShowReport(true); }, [analysis]);
+  useEffect(() => { if (analysis) { setShowReport(true); setShowEnd(false); } }, [analysis]);
+
+  // Celebrate (or console) when the user steps to the final move.
+  const endShown = useRef(null);
+  useEffect(() => {
+    const n = analysis?.moves.length ?? 0;
+    if (analysis && n > 0 && selectedPly === n - 1 && endShown.current !== analysis) {
+      endShown.current = analysis;
+      setShowEnd(true);
+    }
+  }, [selectedPly, analysis]);
 
   // Free explore / analysis board.
   const [explore, setExplore] = useState(false);
@@ -272,11 +285,18 @@ export default function Review() {
     const who = oc.winner === 'draw' ? t('review.drawResult') : oc.winner === 'white' ? t('review.whiteWon') : t('review.blackWon');
     resultLine = oc.reasonKey ? `${who} ${t('review.by', { reason: t(`review.reason_${oc.reasonKey}`) })}` : who;
   }
+  const focusOutcome = oc.winner === 'draw' || oc.winner === 'ongoing' ? 'draw'
+    : (oc.winner === 'white') === (focusColor === 'w') ? 'win' : 'loss';
 
   return (
     <main className="review-view three-col">
       {/* LEFT — everything about the current move */}
       <aside className="col-current">
+        <div className={`result-card r-${oc.winner}`}>
+          <span className="rc-score">{oc.result}</span>
+          <span className="rc-text">{resultLine}</span>
+          <button className="rc-report" onClick={() => setShowReport(true)}>{t('report.open')}</button>
+        </div>
         <div className="col-title">{t('review.thisMove')}</div>
         <StatsPanel analysis={analysis} selectedPly={selectedPly} focusColor={focusColor} />
         <CoachCard node={node} />
@@ -294,7 +314,7 @@ export default function Review() {
 
       {/* CENTER — the board */}
       <div className="col-board">
-        <button className="back-btn" onClick={() => navigate('/')}><FaArrowLeftLong /> {t('review.back')}</button>
+        <button className="back-btn" onClick={() => (selectedPly < total - 1 ? setShowExit(true) : navigate('/'))}><FaArrowLeftLong /> {t('review.back')}</button>
         <div className="game-head">
           <span className="gh-players">{analysis.game.white} {t('review.vs')} {analysis.game.black}</span>
           {analysis.game.opening && <span className="gh-opening">{analysis.game.opening}</span>}
@@ -341,10 +361,10 @@ export default function Review() {
           <EvalGraph series={analysis.evalSeries} selectedPly={selectedPly} onSelect={go} />
         )}
         <div className="nav">
-          <button onClick={() => go(-1)} title={t('review.navStart')}><FaAnglesLeft /></button>
-          <button onClick={() => go(selectedPly - 1)} title={t('review.navPrev')}><FaAngleLeft /></button>
-          <button onClick={() => go(selectedPly + 1)} title={t('review.navNext')}><FaAngleRight /></button>
-          <button onClick={() => go(total - 1)} title={t('review.navEnd')}><FaAnglesRight /></button>
+          <button onClick={() => go(-1)} disabled={selectedPly <= -1} title={t('review.navStart')}><FaAnglesLeft /></button>
+          <button onClick={() => go(selectedPly - 1)} disabled={selectedPly <= -1} title={t('review.navPrev')}><FaAngleLeft /></button>
+          <button onClick={() => go(selectedPly + 1)} disabled={selectedPly >= total - 1} title={t('review.navNext')}><FaAngleRight /></button>
+          <button onClick={() => go(total - 1)} disabled={selectedPly >= total - 1} title={t('review.navEnd')}><FaAnglesRight /></button>
         </div>
         <button className="next-mistake" onClick={() => {
           const nb = analysis.moves.find((m) => m.ply > selectedPly && m.color === focusColor && m.tagKind === 'bad');
@@ -357,11 +377,6 @@ export default function Review() {
       {/* RIGHT — the whole game */}
       <aside className="col-full">
         <div className="col-title">{t('review.wholeGame')}</div>
-        <div className={`result-card r-${oc.winner}`}>
-          <span className="rc-score">{oc.result}</span>
-          <span className="rc-text">{resultLine}</span>
-          <button className="rc-report" onClick={() => setShowReport(true)}>{t('report.open')}</button>
-        </div>
         <Takeaway analysis={analysis} focusColor={focusColor} />
         <div className="acc-cards">
           <div className={`acc ${focusColor === 'w' ? 'focus' : ''}`}>
@@ -379,6 +394,18 @@ export default function Review() {
       </aside>
 
       {showReport && <GameReport analysis={analysis} focusColor={focusColor} onClose={() => setShowReport(false)} />}
+      {showEnd && <EndCard outcome={focusOutcome} onClose={() => setShowEnd(false)} />}
+      {showExit && (
+        <div className="exit-modal" onClick={() => setShowExit(false)}>
+          <div className="exit-card" onClick={(e) => e.stopPropagation()}>
+            <div className="exit-quip">{t('exit.quip')}</div>
+            <div className="exit-actions">
+              <button className="ghost" onClick={() => setShowExit(false)}>{t('exit.stay')}</button>
+              <button className="primary" onClick={() => navigate('/')}>{t('exit.leave')}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

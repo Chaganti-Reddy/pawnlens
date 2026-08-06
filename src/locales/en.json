@@ -17,6 +17,17 @@
   "common": {
     "close": "Close"
   },
+  "end": {
+    "done": "Continue",
+    "win": { "title": "Well played!", "sub": "You won this one — revisit where you built the advantage." },
+    "draw": { "title": "Hard-fought draw", "sub": "Study the moments that could have tipped it your way." },
+    "loss": { "title": "Every loss teaches", "sub": "Find the turning point and you won't repeat it." }
+  },
+  "exit": {
+    "quip": "Leaving mid-review? Even the endgame has more to teach. Sure you want to bail?",
+    "stay": "Keep reviewing",
+    "leave": "Leave"
+  },
   "report": {
     "title": "Game report",
     "open": "Game report",
@@ -235,6 +246,8 @@
     "heatmap": "When you slip",
     "heatmapFoot": "mistakes by move number — tap a bar to see them",
     "drill": "Drill these",
+    "needMore": "Analyze a few more games for a reliable read on your weaknesses.",
+    "balanced": "No recurring weakness stands out yet — your mistakes are well spread. Keep analyzing.",
     "vs": "vs",
     "atMove": "move {{n}}",
     "reviewMove": "Review this move",
