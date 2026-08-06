@@ -16,7 +16,7 @@ import ExportMenu from '../components/ExportMenu.jsx';
 import Takeaway from '../components/Takeaway.jsx';
 import GameReport from '../components/GameReport.jsx';
 import EndCard from '../components/EndCard.jsx';
-import { BOARD_THEMES } from '../lib/theme.js';
+import { BOARD_THEMES, getHints } from '../lib/theme.js';
 import { piecesFor } from '../lib/pieces.jsx';
 import { playMove, playSound, soundForSan } from '../lib/sound.js';
 import { parseSharedGame } from '../lib/share.js';
@@ -26,6 +26,8 @@ import { loadHistory } from '../lib/storage.js';
 import { FaAngleLeft, FaAngleRight, FaAnglesLeft, FaAnglesRight, FaArrowLeftLong, FaDumbbell, FaCircleCheck, FaCircleXmark } from '../ui/icons.js';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const HINT_DOT = { background: 'radial-gradient(circle, rgba(0,0,0,0.28) 20%, transparent 22%)' };
+const HINT_RING = { boxShadow: 'inset 0 0 0 3px rgba(0,0,0,0.28)' };
 
 export default function Review() {
   const navigate = useNavigate();
@@ -62,6 +64,7 @@ export default function Review() {
   const [showReport, setShowReport] = useState(false);
   const [showEnd, setShowEnd] = useState(false);
   const [showExit, setShowExit] = useState(false);
+  const [hintSquares, setHintSquares] = useState({});
 
   // Pop the animated game report whenever a fresh analysis lands.
   useEffect(() => { if (analysis) { setShowReport(true); setShowEnd(false); } }, [analysis]);
@@ -86,7 +89,7 @@ export default function Review() {
     const clamped = Math.max(-1, Math.min(total - 1, ply));
     setSelectedPly(clamped);
     setRetry(false); setRetryStatus('idle'); setRetryFen(null);
-    setGuessResult(null);
+    setGuessResult(null); setHintSquares({});
     if (clamped >= 0 && analysis) playSound(soundForSan(analysis.moves[clamped]?.san));
   }, [total, setSelectedPly, analysis]);
 
@@ -164,6 +167,7 @@ export default function Review() {
   };
 
   const onRetryDrop = ({ sourceSquare, targetSquare }) => {
+    setHintSquares({});
     if (retryStatus === 'thinking') return false;
     const base = retryFen || node.fenBefore;
     let c, mv;
@@ -198,6 +202,7 @@ export default function Review() {
   };
   const exitExplore = () => { setExplore(false); setExploreFen(null); setExploreStack([]); };
   const onExploreDrop = ({ sourceSquare, targetSquare }) => {
+    setHintSquares({});
     let c, mv;
     try { c = new Chess(exploreFen); mv = c.move({ from: sourceSquare, to: targetSquare, promotion: 'q' }); } catch { return false; }
     if (!mv) return false;
@@ -233,6 +238,7 @@ export default function Review() {
     try { const c = new Chess(fenBefore); return c.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] || 'q' })?.san; } catch { return null; }
   };
   const onGuessDrop = ({ sourceSquare, targetSquare }) => {
+    setHintSquares({});
     if (!nextMove) return false;
     let mv;
     try { const c = new Chess(nextMove.fenBefore); mv = c.move({ from: sourceSquare, to: targetSquare, promotion: 'q' }); } catch { return false; }
@@ -258,9 +264,25 @@ export default function Review() {
   if (showThreats) {
     for (const sq of hangingSquares(pos)) styles[sq] = { background: 'rgba(224,87,75,0.5)' };
   }
+  if (dragging) styles = { ...styles, ...hintSquares };
+
+  // Legal-move hint dots on the interactive boards, when the setting is on.
+  const onBoardClick = ({ square }) => {
+    if (!dragging || !getHints()) { setHintSquares({}); return; }
+    try {
+      const c = new Chess(pos);
+      const p = c.get(square);
+      if (!p || p.color !== c.turn()) { setHintSquares({}); return; }
+      const h = {};
+      for (const m of c.moves({ square, verbose: true })) h[m.to] = m.captured ? HINT_RING : HINT_DOT;
+      setHintSquares(h);
+    } catch { setHintSquares({}); }
+  };
+
   const boardOptions = {
     id: 'review', position: pos, boardOrientation: focusColor === 'w' ? 'white' : 'black',
     arrows: arrowsUsed, squareStyles: styles, allowDragging: dragging, onPieceDrop: onDrop,
+    onSquareClick: dragging ? onBoardClick : undefined,
     showNotation: true, showAnimations: true, pieces: piecesFor(pieceSetKey),
     darkSquareStyle: { backgroundColor: boardTheme.dark }, lightSquareStyle: { backgroundColor: boardTheme.light },
   };
