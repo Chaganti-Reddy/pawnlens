@@ -108,7 +108,7 @@ export default function Endgames() {
         {list.map((eg) => (
           <button className="op-item" key={eg.id} onClick={() => setChosen(eg)}>
             <span className="op-nm">{eg.name}</span>
-            <span className="op-eco">{t(`endgames.goal_${eg.goal}`)}</span>
+            <span className="eg-goal">{t(`endgames.goal_${eg.goal}`)}</span>
           </button>
         ))}
       </div>
