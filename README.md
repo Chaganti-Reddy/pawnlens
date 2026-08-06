@@ -156,21 +156,13 @@ PawnLens is **not affiliated with** chess.com or lichess; it only uses their pub
 
 ## Screenshots
 
-**Game review** — three-column study view: *This move* (win %, coach, engine lines) · *Board* (eval bar, arrows, controls) · *Whole game* (result, turning points, move list).
+PawnLens ships light **and** dark themes (plus board & piece sets).
 
-![Game review](docs/images/review.jpeg)
-
-**Train** — your mistakes + an 11k tactics bank in one FSRS-scheduled queue, with an adjusting puzzle rating.
-
-![Train](docs/images/train.jpeg)
-
-**Weakness analyzer** — recurring mistakes with the exact evidence, and one-click drilling.
-
-![Weaknesses](docs/images/weakness.jpeg)
-
-**Start a review** — by username, or paste/upload a PGN.
-
-![Home](docs/images/home.jpeg)
+|  | Light | Dark |
+| --- | --- | --- |
+| **Game review**<br/><sub>coach, eval, arrows, engine lines, turning points</sub> | ![Review – light](docs/images/review-light.jpeg) | ![Review – dark](docs/images/review-dark.jpeg) |
+| **Train**<br/><sub>your mistakes + 11k tactics, FSRS, puzzle rating</sub> | ![Train – light](docs/images/train-light.jpeg) | ![Train – dark](docs/images/train-dark.jpeg) |
+| **Weakness analyzer**<br/><sub>recurring patterns with evidence + one-click drilling</sub> | ![Weaknesses – light](docs/images/weakness-light.jpeg) | ![Weaknesses – dark](docs/images/weakness-dark.jpeg) |
 
 ## Contributing
 
