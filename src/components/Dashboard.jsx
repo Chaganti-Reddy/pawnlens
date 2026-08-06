@@ -32,6 +32,12 @@ export default function Dashboard({ data, playerName }) {
       </div>
 
       <h3>{t('weakness.recurring')}</h3>
+      {!data.enoughData && (
+        <p className="muted dash-hint">{t('weakness.needMore')}</p>
+      )}
+      {data.topCategories.length === 0 ? (
+        <p className="muted dash-hint">{t('weakness.balanced')}</p>
+      ) : (
       <div className="dash-cats">
         {data.topCategories.map((c) => (
           <div className="cat" key={c.cat}>
@@ -66,6 +72,7 @@ export default function Dashboard({ data, playerName }) {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }

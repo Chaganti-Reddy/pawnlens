@@ -193,24 +193,33 @@ export function aggregateWeaknesses(playerName) {
   }
   const totalBad = instances.length;
 
-  const topCategories = Object.entries(catCounts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([cat, count]) => ({
-      cat,
-      count,
-      pct: Math.round((count / totalBad) * 100),
-      example: byCat[cat][0],
-      instances: byCat[cat].slice(0, 4), // top few, biggest swing first
-    }));
+  // A category is only a real *weakness* if it recurs — not a one-off. Score by
+  // how often it happens AND how costly it is (avg win% dropped). Filter noise.
+  const perGame = games.length ? totalBad / games.length : 0;
+  const all = Object.entries(catCounts).map(([cat, count]) => {
+    const list = byCat[cat];
+    const avgDelta = list.reduce((s, i) => s + (i.delta || 0), 0) / list.length;
+    const pct = Math.round((count / totalBad) * 100);
+    return { cat, count, pct, avgDelta, score: count * (1 + avgDelta / 20), example: list[0], instances: list.slice(0, 4) };
+  });
+  // Keep patterns that recur (>=2 and >=15% of mistakes) or are individually costly.
+  const topCategories = all
+    .filter((c) => (c.count >= 2 && c.pct >= 15) || (c.count >= 2 && c.avgDelta >= 20))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
 
   const worstPhase = Object.entries(phaseCounts).sort((a, b) => b[1] - a[1])[0];
+  // Need a reasonable sample before calling anything a weakness.
+  const enoughData = games.length >= 3 && totalBad >= 6 && topCategories.length > 0;
 
   return {
     gamesAnalyzed: games.length,
     avgAccuracy: accSum / games.length,
     totalMistakes: totalBad,
-    mistakesPerGame: totalBad / games.length,
+    mistakesPerGame: perGame,
     topCategories,
+    allCategories: all.sort((a, b) => b.count - a.count),
+    enoughData,
     phaseCounts,
     worstPhase: worstPhase ? worstPhase[0] : null,
   };
