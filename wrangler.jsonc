@@ -1,0 +1,12 @@
+{
+  // Deploy PawnLens as a Cloudflare Worker serving static assets (Workers Builds flow).
+  // Build command: `npm run build`  ·  Deploy command: `npx wrangler deploy`
+  // (For the classic Pages flow instead, set output dir = dist and use public/_redirects.)
+  "name": "pawnlens",
+  "compatibility_date": "2025-06-01",
+  "assets": {
+    "directory": "./dist",
+    // Serve index.html (200) for client-side routes like /review, /train — SPA fallback.
+    "not_found_handling": "single-page-application"
+  }
+}
