@@ -16,6 +16,7 @@ const BATCH_DEPTH = 8;
 export function ReviewerProvider({ children }) {
   const navigate = useNavigate();
   const engineRef = useRef(null);
+  const runIdRef = useRef(0);
 
   const [engineStatus, setEngineStatus] = useState('loading');
   const [source, setSource] = useState('chesscom');
@@ -86,6 +87,7 @@ export function ReviewerProvider({ children }) {
 
   const runAnalysis = useCallback(async (game, color) => {
     const side = color || game.userColor || 'w';
+    const myRun = ++runIdRef.current; // supersede any in-flight analysis
     setError('');
     setFocusColor(side);
     setAnalysis(null);
@@ -96,14 +98,16 @@ export function ReviewerProvider({ children }) {
     navigate(game.gameId ? `/review/${game.gameId}` : '/review');
     try {
       const eng = await ensureEngine();
+      if (runIdRef.current !== myRun) return;
       setEngineStatus('ready');
-      const res = await analyzeGame(game.pgn, { engine: eng, depth, onProgress: (d, t) => setProgress({ done: d, total: t }) });
+      const res = await analyzeGame(game.pgn, { engine: eng, depth, onProgress: (d, t) => { if (runIdRef.current === myRun) setProgress({ done: d, total: t }); } });
+      if (runIdRef.current !== myRun) return; // a newer run replaced this one
       res.game = game;
       setAnalysis(res);
       setSelectedPly(-1); // open at the starting position
       setHistory(addToHistory(summarize(game, res, side)));
     } catch (e) {
-      setError(e.message || String(e));
+      if (runIdRef.current === myRun) setError(e.message || String(e));
     }
   }, [depth, ensureEngine, navigate]);
 
@@ -111,6 +115,7 @@ export function ReviewerProvider({ children }) {
   const runAnalysisFromPgn = useCallback(async (pgn, side, targetPly) => {
     const game = { ...pgnMeta(pgn), source: 'shared' };
     const color = side || game.userColor || 'w';
+    const myRun = ++runIdRef.current;
     setError('');
     setFocusColor(color);
     setAnalysis(null);
@@ -120,8 +125,10 @@ export function ReviewerProvider({ children }) {
     setEngineStatus('loading');
     try {
       const eng = await ensureEngine();
+      if (runIdRef.current !== myRun) return;
       setEngineStatus('ready');
-      const res = await analyzeGame(pgn, { engine: eng, depth, onProgress: (d, t) => setProgress({ done: d, total: t }) });
+      const res = await analyzeGame(pgn, { engine: eng, depth, onProgress: (d, t) => { if (runIdRef.current === myRun) setProgress({ done: d, total: t }); } });
+      if (runIdRef.current !== myRun) return;
       res.game = game;
       setAnalysis(res);
       setSelectedPly(targetPly != null ? targetPly : -1);
@@ -140,6 +147,7 @@ export function ReviewerProvider({ children }) {
   const runBatch = useCallback(async (list) => {
     const items = list && list.length ? list : games;
     if (!items.length) return;
+    const myRun = ++runIdRef.current; // supersede any single-game analysis
     setError('');
     const user = lastQuery;
     navigate(`/weaknesses${user ? `?u=${encodeURIComponent(user)}` : ''}`);
@@ -147,16 +155,17 @@ export function ReviewerProvider({ children }) {
       const eng = await ensureEngine();
       const n = items.length;
       for (let i = 0; i < n; i++) {
+        if (runIdRef.current !== myRun) return; // superseded
         setBatch({ i: i + 1, n });
         setProgress({ done: 0, total: 1 });
         const g = items[i];
-        const res = await analyzeGame(g.pgn, { engine: eng, depth: BATCH_DEPTH, onProgress: (d, t) => setProgress({ done: d, total: t }) });
+        const res = await analyzeGame(g.pgn, { engine: eng, depth: BATCH_DEPTH, onProgress: (d, t) => { if (runIdRef.current === myRun) setProgress({ done: d, total: t }); } });
         setHistory(addToHistory(summarize(g, res, g.userColor || 'w')));
       }
     } catch (e) {
-      setError(e.message || String(e));
+      if (runIdRef.current === myRun) setError(e.message || String(e));
     } finally {
-      setBatch(null);
+      if (runIdRef.current === myRun) setBatch(null);
     }
   }, [games, lastQuery, ensureEngine, navigate]);
 
