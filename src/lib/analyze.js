@@ -8,21 +8,26 @@ function whiteWin(ev) {
   return 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cp)) - 1);
 }
 
-// Lichess-style accuracy for one colour: blend of a volatility-weighted mean and
-// a harmonic mean of the per-move accuracies. Volatile positions weigh more.
+// Lichess accuracy for one colour: average of a volatility-weighted mean and the
+// harmonic mean of the per-move accuracies. Faithful to lichess's published method
+// — window size = clamp(positions/10, 2, 8); each move's weight is the standard
+// deviation of the win% over a fixed-size window (front-clamped like lichess's
+// padded sliding), floored at 0.5, so swingy moments count more than quiet ones.
+function stdev(xs) {
+  const mean = xs.reduce((a, b) => a + b, 0) / xs.length;
+  return Math.sqrt(xs.reduce((a, b) => a + (b - mean) ** 2, 0) / xs.length);
+}
 function colorAccuracy(moves, color, whiteWinSeries) {
   const mine = moves.filter((m) => m.color === color);
   if (!mine.length) return 0;
+  const n = whiteWinSeries.length; // number of positions
+  const w = Math.min(8, Math.max(2, Math.round(n / 10)));
+  const weightAt = (ply) => {
+    const start = Math.min(Math.max(0, ply + 1 - w + 1), Math.max(0, n - w));
+    return Math.max(0.5, stdev(whiteWinSeries.slice(start, start + w)));
+  };
   const accs = mine.map((m) => Math.max(1, m.accuracy));
-  const n = whiteWinSeries.length;
-  const win = Math.min(8, Math.max(2, Math.round(n / 10)));
-  const weights = mine.map((m) => {
-    const center = m.ply + 1;
-    const slice = whiteWinSeries.slice(Math.max(0, center - win), Math.min(n, center + 1));
-    const mean = slice.reduce((a, b) => a + b, 0) / slice.length;
-    const variance = slice.reduce((a, b) => a + (b - mean) ** 2, 0) / slice.length;
-    return Math.max(0.5, Math.sqrt(variance));
-  });
+  const weights = mine.map((m) => weightAt(m.ply));
   const wSum = weights.reduce((a, b) => a + b, 0);
   const weighted = accs.reduce((s, a, i) => s + a * weights[i], 0) / wSum;
   const harmonic = accs.length / accs.reduce((s, a) => s + 1 / a, 0);
