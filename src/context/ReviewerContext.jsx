@@ -24,7 +24,7 @@ export function ReviewerProvider({ children }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const [depth, setDepth] = useState(14);
+  const [depth, setDepth] = useState(18);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [batch, setBatch] = useState(null);
   const [analysis, setAnalysis] = useState(null);
