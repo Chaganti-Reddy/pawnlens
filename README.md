@@ -3,12 +3,17 @@
 </p>
 
 <p align="center">
+  <a href="https://pawnlens.pages.dev"><img alt="Live demo" src="https://img.shields.io/badge/live-pawnlens.pages.dev-26c2a3.svg"></a>
   <a href="LICENSE"><img alt="License: GPL v3" src="https://img.shields.io/badge/License-GPLv3-7dc96b.svg"></a>
   <img alt="React" src="https://img.shields.io/badge/React-19-26c2a3.svg">
   <img alt="Vite" src="https://img.shields.io/badge/Vite-8-9bcf6b.svg">
   <img alt="Engine" src="https://img.shields.io/badge/Stockfish-18%20(WASM)-4bbf9f.svg">
   <img alt="Backend" src="https://img.shields.io/badge/backend-none-e6c14b.svg">
   <img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-7dc96b.svg">
+</p>
+
+<p align="center">
+  <b><a href="https://pawnlens.pages.dev">▶ Try it live — pawnlens.pages.dev</a></b>
 </p>
 
 <p align="center">
