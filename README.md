@@ -99,7 +99,7 @@ npm run preview   # serve the build locally
 npm run lint      # oxlint
 ```
 
-Deploy the static `dist/` folder to any host. Drop-in configs for **Cloudflare Pages** (`public/_redirects`) and **Netlify** (`netlify.toml`) are included — see [`docs/DEPLOY.md`](docs/DEPLOY.md). The only requirement is an SPA fallback (serve `index.html` for unknown routes).
+Deploy the static `dist/` folder to any host. Drop-in configs are included for **Cloudflare** (`wrangler.jsonc`, Workers static assets) and **Netlify** (`netlify.toml`) — see [`docs/DEPLOY.md`](docs/DEPLOY.md). The only requirement is an SPA fallback (serve `index.html` for unknown routes).
 
 > First analysis downloads the ~7&nbsp;MB Stockfish engine once, then it's cached.
 

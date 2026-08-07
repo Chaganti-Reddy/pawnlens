@@ -6,15 +6,19 @@ Both configs below are already in the repo.
 
 Build output: `dist/` · Build command: `npm run build` · Node: 20
 
-## Cloudflare Pages (recommended — unlimited bandwidth)
+## Cloudflare (recommended — free unlimited static serving)
 
+**Workers flow (default new UI)** — uses `wrangler.jsonc` in the repo:
 1. Push the repo to GitHub (see below).
-2. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git**.
-3. Pick the `pawnlens` repo. Settings:
-   - Framework preset: **Vite** (or None)
-   - Build command: `npm run build`
-   - Build output directory: `dist`
-4. Deploy. SPA fallback is handled by `public/_redirects` (`/*  /index.html  200`).
+2. Cloudflare dashboard → **Workers & Pages → Create → Connect to Git** → pick `pawnlens`.
+3. Build command: `npm run build` · Deploy command: `npx wrangler deploy` (default).
+4. Deploy. SPA fallback comes from `wrangler.jsonc` → `assets.not_found_handling: "single-page-application"`.
+
+> Do **not** add a `_redirects` file for the Workers flow — its validator rejects the
+> `/*  /index.html` SPA rule (infinite-loop error). `not_found_handling` replaces it.
+
+**Classic Pages flow** (if you use the "Pages" tab instead): set Build output directory
+`dist` and add a `public/_redirects` with `/*  /index.html  200`.
 
 ## Netlify
 
