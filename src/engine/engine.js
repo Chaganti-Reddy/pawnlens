@@ -1,8 +1,14 @@
-// Stockfish 18 (lite, single-threaded) UCI wrapper.
-// Runs entirely in the user's browser via a Web Worker -> zero server cost.
+// Stockfish 18 (lite) UCI wrapper. Runs entirely in the user's browser via a Web
+// Worker -> zero server cost. Uses the multi-threaded build when the page is
+// cross-origin isolated (SharedArrayBuffer available), else the single-threaded one.
 // Engine is GPLv3 (c) Chess.com / nmrugg stockfish.js. See public/engine + LICENSE.
 
-const ENGINE_URL = '/engine/stockfish-18-lite-single.js';
+const MULTI_THREAD =
+  typeof SharedArrayBuffer !== 'undefined' && typeof self !== 'undefined' && self.crossOriginIsolated;
+const ENGINE_URL = MULTI_THREAD ? '/engine/stockfish-18-lite.js' : '/engine/stockfish-18-lite-single.js';
+const THREADS = MULTI_THREAD
+  ? Math.max(2, Math.min(8, (navigator.hardwareConcurrency || 4) - 1))
+  : 1;
 
 export class Engine {
   constructor() {
@@ -35,6 +41,7 @@ export class Engine {
       const waitUci = (line) => {
         if (line.startsWith('uciok')) {
           off(waitUci);
+          if (THREADS > 1) this.setOption('Threads', THREADS);
           this.send('isready');
           on(waitReady);
         }

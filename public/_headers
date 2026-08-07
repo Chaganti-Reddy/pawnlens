@@ -1,0 +1,5 @@
+# Cross-origin isolation → enables SharedArrayBuffer → multi-threaded Stockfish.
+# `credentialless` keeps cross-origin images (chess.com avatars) and API fetches working.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless
