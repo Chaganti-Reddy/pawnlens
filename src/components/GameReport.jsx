@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TAGS } from '../lib/classify.js';
+import { formatTimeControl, classifyTimeControl, formatDuration } from '../lib/timecontrol.js';
+import { TimeIcon } from './icons.jsx';
 import { FaCircleXmark, FaChessKnight } from '../ui/icons.js';
 
 function whiteWin(ev) {
@@ -47,17 +49,20 @@ export default function GameReport({ analysis, focusColor, onClose }) {
   const accW = useCountUp(analysis.accuracyWhite);
   const accB = useCountUp(analysis.accuracyBlack);
   const swing = biggestSwing(analysis.moves, focusColor);
+  const timeClass = g.timeClass || classifyTimeControl(g.timeControl);
+  const tcLabel = formatTimeControl(g.timeControl);
 
   const Side = ({ color, acc }) => {
     const rating = color === 'w' ? analysis.ratingWhite : analysis.ratingBlack;
     const acpl = color === 'w' ? analysis.acplWhite : analysis.acplBlack;
     const counts = analysis.counts[color] || {};
+    const avg = color === 'w' ? analysis.avgSecondsWhite : analysis.avgSecondsBlack;
     return (
       <div className={`gr-side ${focusColor === color ? 'focus' : ''}`}>
         <div className="gr-name">{color === 'w' ? g.white : g.black}</div>
         <div className="gr-acc" style={{ color: 'var(--accent)' }}>{acc.toFixed(1)}%</div>
         <div className="gr-sub">{t('report.accuracy')}</div>
-        <div className="gr-meta">{t('report.est', { n: rating })} · {t('report.acpl', { n: acpl })}</div>
+        <div className="gr-meta">{t('report.est', { n: rating })} · {t('report.acpl', { n: acpl })}{avg != null ? ` · ${t('review.avgMove', { time: formatDuration(avg) })}` : ''}</div>
         <div className="gr-tags">
           {ORDER.filter((k) => counts[k]).map((k) => (
             <span className="gr-chip" key={k}>
@@ -76,6 +81,9 @@ export default function GameReport({ analysis, focusColor, onClose }) {
         <button className="gr-close icon-btn" onClick={onClose} aria-label={t('common.close')}><FaCircleXmark /></button>
         <div className="gr-title"><FaChessKnight /> {t('report.title')}</div>
         {g.opening && <div className="gr-opening">{g.opening}</div>}
+        {timeClass && (
+          <div className="gr-time"><TimeIcon kind={timeClass} />{t(`review.timeClass_${timeClass}`, timeClass)}{tcLabel && ` · ${tcLabel}`}</div>
+        )}
 
         <div className="gr-sides">
           <Side color="w" acc={accW} />

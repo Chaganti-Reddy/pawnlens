@@ -1,6 +1,7 @@
 import { Chess } from 'chess.js';
 import { winPct, scoreToCp, classifyMove, ratingFromAccuracy, TAGS } from './classify.js';
 import { coachNote } from './coach.js';
+import { parseClocks, baseOf, incrementOf } from './timecontrol.js';
 
 // White-perspective win% (0..100) from a white-perspective eval.
 function whiteWin(ev) {
@@ -67,6 +68,19 @@ export async function analyzeGame(pgn, { engine, depth = 12, onProgress } = {}) 
     replay.move(m);
     positions.push(replay.fen());
   }
+
+  // Per-move clocks from [%clk] comments (chess.com PGNs carry them). Only trust
+  // them when there's one clock per ply; otherwise leave time data off entirely.
+  const tc = (pgn.match(/\[TimeControl\s+"([^"]+)"\]/) || [])[1] || '';
+  const clocks = parseClocks(pgn);
+  const hasClocks = clocks.length === verbose.length && clocks.length > 0;
+  const inc = incrementOf(tc);
+  const startBase = baseOf(tc);
+  const timeSpentAt = (ply) => {
+    if (!hasClocks) return null;
+    const before = ply >= 2 ? clocks[ply - 2] : startBase || clocks[ply] + inc;
+    return Math.max(0, before - clocks[ply] + inc);
+  };
 
   const evals = [];
   for (let i = 0; i < positions.length; i++) {
@@ -148,6 +162,8 @@ export async function analyzeGame(pgn, { engine, depth = 12, onProgress } = {}) 
       fenBefore: positions[i],
       fenAfter: positions[i + 1],
       evalWhite: whiteEval(i + 1),
+      clock: hasClocks ? clocks[i] : null,
+      secondsSpent: timeSpentAt(i),
     };
   });
 
@@ -181,5 +197,9 @@ export async function analyzeGame(pgn, { engine, depth = 12, onProgress } = {}) 
     acplBlack,
     accuracyByPhase: { w: phaseAcc('w'), b: phaseAcc('b') },
     counts,
+    timeControl: tc,
+    hasClocks,
+    avgSecondsWhite: hasClocks ? mean(moves.filter((m) => m.color === 'w').map((m) => m.secondsSpent)) : null,
+    avgSecondsBlack: hasClocks ? mean(moves.filter((m) => m.color === 'b').map((m) => m.secondsSpent)) : null,
   };
 }

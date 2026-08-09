@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { TAGS, ratingFromAccuracy } from '../lib/classify.js';
+import { formatDuration, secondsToClock } from '../lib/timecontrol.js';
+import { FaRegClock } from '../ui/icons.js';
 
 function whiteWin(ev) {
   if (ev?.mate != null) return ev.mate > 0 ? 100 : 0;
@@ -42,6 +44,14 @@ export default function StatsPanel({ analysis, selectedPly, focusColor }) {
           ? t('review.startPos')
           : t('review.movePos', { n: selectedPly + 1, total: moves.length })}
       </div>
+
+      {node && node.secondsSpent != null && (
+        <div className="sp-clock">
+          <FaRegClock className="tc-icon" />
+          <span>{t('review.took', { time: formatDuration(node.secondsSpent) })}</span>
+          {node.clock != null && <span className="sp-clock-left">{t('review.clockLeft', { time: secondsToClock(node.clock) })}</span>}
+        </div>
+      )}
 
       <div className="tag-legend">
         {Object.entries(counts).map(([key, n]) => (

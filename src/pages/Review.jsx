@@ -22,6 +22,8 @@ import { playMove, playSound, soundForSan } from '../lib/sound.js';
 import { parseSharedGame } from '../lib/share.js';
 import { hangingSquares } from '../lib/threats.js';
 import { outcomeText } from '../lib/outcome.js';
+import { formatTimeControl, classifyTimeControl } from '../lib/timecontrol.js';
+import { TimeIcon } from '../components/icons.jsx';
 import { loadHistory } from '../lib/storage.js';
 import { FaAngleLeft, FaAngleRight, FaAnglesLeft, FaAnglesRight, FaArrowLeftLong, FaDumbbell, FaCircleCheck, FaCircleXmark } from '../ui/icons.js';
 
@@ -300,6 +302,8 @@ export default function Review() {
   }
 
   const oc = outcomeText(analysis.game);
+  const timeClass = analysis.game.timeClass || classifyTimeControl(analysis.game.timeControl);
+  const tcLabel = formatTimeControl(analysis.game.timeControl);
   let resultLine;
   if (oc.text) resultLine = oc.text;
   else if (oc.winner === 'ongoing') resultLine = t('review.ongoing');
@@ -340,6 +344,9 @@ export default function Review() {
         <div className="game-head">
           <span className="gh-players">{analysis.game.white} {t('review.vs')} {analysis.game.black}</span>
           {analysis.game.opening && <span className="gh-opening">{analysis.game.opening}</span>}
+          {timeClass && (
+            <span className="gh-time"><TimeIcon kind={timeClass} />{t(`review.timeClass_${timeClass}`, timeClass)}{tcLabel && ` ${tcLabel}`}</span>
+          )}
         </div>
         <div className="board-toggles">
           <button className={guess ? 'on' : ''} onClick={() => { setGuess((g) => !g); setGuessResult(null); }} disabled={explore}>
