@@ -17,6 +17,9 @@ export function ReviewerProvider({ children }) {
   const navigate = useNavigate();
   const engineRef = useRef(null);
   const runIdRef = useRef(0);
+  // Per-session cache of full analyses, keyed by pgn+depth, so re-reviewing the
+  // same game (or opening it from history) is instant instead of re-running the engine.
+  const cacheRef = useRef(new Map());
 
   const [engineStatus, setEngineStatus] = useState('loading');
   const [source, setSource] = useState('chesscom');
@@ -43,6 +46,18 @@ export function ReviewerProvider({ children }) {
     await eng.init();
     return eng;
   }, []);
+
+  // Analyze a pgn at the current depth, reusing a cached result when we've already
+  // done this exact (pgn, depth) pair. onProgress still fires (instantly) for cache hits.
+  const analyzeCached = useCallback(async (pgn, d, onProgress) => {
+    const key = `${d}|${pgn}`;
+    const hit = cacheRef.current.get(key);
+    if (hit) { onProgress?.(1, 1); return hit; }
+    const eng = await ensureEngine();
+    const res = await analyzeGame(pgn, { engine: eng, depth: d, onProgress });
+    cacheRef.current.set(key, res);
+    return res;
+  }, [ensureEngine]);
   useEffect(() => {
     applyTheme(getTheme());
     let alive = true;
@@ -97,10 +112,10 @@ export function ReviewerProvider({ children }) {
     setEngineStatus('loading');
     navigate(game.gameId ? `/review/${game.gameId}` : '/review');
     try {
-      const eng = await ensureEngine();
+      await ensureEngine();
       if (runIdRef.current !== myRun) return;
       setEngineStatus('ready');
-      const res = await analyzeGame(game.pgn, { engine: eng, depth, onProgress: (d, t) => { if (runIdRef.current === myRun) setProgress({ done: d, total: t }); } });
+      const res = await analyzeCached(game.pgn, depth, (d, t) => { if (runIdRef.current === myRun) setProgress({ done: d, total: t }); });
       if (runIdRef.current !== myRun) return; // a newer run replaced this one
       res.game = game;
       setAnalysis(res);
@@ -109,7 +124,7 @@ export function ReviewerProvider({ children }) {
     } catch (e) {
       if (runIdRef.current === myRun) setError(e.message || String(e));
     }
-  }, [depth, ensureEngine, navigate]);
+  }, [depth, ensureEngine, analyzeCached, navigate]);
 
   // Analyze a raw PGN (used by shared links + weakness "review this"). Does not navigate.
   const runAnalysisFromPgn = useCallback(async (pgn, side, targetPly) => {
@@ -124,10 +139,10 @@ export function ReviewerProvider({ children }) {
     setProgress({ done: 0, total: 1 });
     setEngineStatus('loading');
     try {
-      const eng = await ensureEngine();
+      await ensureEngine();
       if (runIdRef.current !== myRun) return;
       setEngineStatus('ready');
-      const res = await analyzeGame(pgn, { engine: eng, depth, onProgress: (d, t) => { if (runIdRef.current === myRun) setProgress({ done: d, total: t }); } });
+      const res = await analyzeCached(pgn, depth, (d, t) => { if (runIdRef.current === myRun) setProgress({ done: d, total: t }); });
       if (runIdRef.current !== myRun) return;
       res.game = game;
       setAnalysis(res);
@@ -135,7 +150,7 @@ export function ReviewerProvider({ children }) {
     } catch (e) {
       setError(e.message || String(e));
     }
-  }, [depth, ensureEngine]);
+  }, [depth, ensureEngine, analyzeCached]);
 
   // Jump straight from a weakness instance into a review at that exact move.
   const reviewStoredMove = useCallback((inst) => {
@@ -152,14 +167,14 @@ export function ReviewerProvider({ children }) {
     const user = lastQuery;
     navigate(`/weaknesses${user ? `?u=${encodeURIComponent(user)}` : ''}`);
     try {
-      const eng = await ensureEngine();
+      await ensureEngine();
       const n = items.length;
       for (let i = 0; i < n; i++) {
         if (runIdRef.current !== myRun) return; // superseded
         setBatch({ i: i + 1, n });
         setProgress({ done: 0, total: 1 });
         const g = items[i];
-        const res = await analyzeGame(g.pgn, { engine: eng, depth: BATCH_DEPTH, onProgress: (d, t) => { if (runIdRef.current === myRun) setProgress({ done: d, total: t }); } });
+        const res = await analyzeCached(g.pgn, BATCH_DEPTH, (d, t) => { if (runIdRef.current === myRun) setProgress({ done: d, total: t }); });
         setHistory(addToHistory(summarize(g, res, g.userColor || 'w')));
       }
     } catch (e) {
@@ -167,7 +182,7 @@ export function ReviewerProvider({ children }) {
     } finally {
       if (runIdRef.current === myRun) setBatch(null);
     }
-  }, [games, lastQuery, ensureEngine, navigate]);
+  }, [games, lastQuery, ensureEngine, analyzeCached, navigate]);
 
   const value = {
     engineStatus, source, games, lastQuery, busy, error, setError,
