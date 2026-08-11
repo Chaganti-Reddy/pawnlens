@@ -380,13 +380,12 @@
 .brand { cursor: pointer; }
 .brand-name { font-size: 20px; font-weight: 700; }
 .topnav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
-.engine-dot { width: 9px; height: 9px; border-radius: 50%; margin-left: 8px; flex: 0 0 auto; }
-.engine-dot.loading { background: #e6c14b; animation: pulse 1s infinite; }
-.engine-dot.ready { background: var(--accent); animation: readyGlow 2s ease-in-out infinite; }
-@keyframes pulse { 50% { opacity: 0.3; } }
-@keyframes readyGlow {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent); }
-  50% { box-shadow: 0 0 6px 3px color-mix(in srgb, var(--accent) 55%, transparent); }
+.engine-dot { width: 9px; height: 9px; border-radius: 50%; margin-left: 8px; flex: 0 0 auto; animation: dotGlow 2s ease-in-out infinite; }
+.engine-dot.loading { color: #e6c14b; background: #e6c14b; }
+.engine-dot.ready { color: var(--accent); background: var(--accent); }
+@keyframes dotGlow {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 70%, transparent); }
+  50% { box-shadow: 0 0 6px 3px color-mix(in srgb, currentColor 55%, transparent); }
 }
 
 /* tabs with icons */
