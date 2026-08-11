@@ -26,6 +26,8 @@ export function ReviewerProvider({ children }) {
   const [games, setGames] = useState([]);
   const [lastQuery, setLastQuery] = useState('');
   const [busy, setBusy] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [fetchCount, setFetchCount] = useState(0);
   const [error, setError] = useState('');
 
   const [depth, setDepth] = useState(18);
@@ -77,6 +79,7 @@ export function ReviewerProvider({ children }) {
     setBusy(true);
     setGames([]);
     setSource(src);
+    setFetchCount(count);
     try {
       const fetcher = src === 'chesscom' ? fetchChessComGames : fetchLichessGames;
       const list = await fetcher(name, count);
@@ -90,6 +93,24 @@ export function ReviewerProvider({ children }) {
       setBusy(false);
     }
   }, []);
+
+  // Fetch a larger batch of the same user's games (keeps what's shown until the
+  // bigger list arrives, so there's no flash of an empty list).
+  const loadMoreGames = useCallback(async () => {
+    if (source === 'pgn' || !lastQuery || loadingMore) return;
+    setLoadingMore(true);
+    const next = fetchCount + 25;
+    try {
+      const fetcher = source === 'chesscom' ? fetchChessComGames : fetchLichessGames;
+      const list = await fetcher(lastQuery, next);
+      setGames(list);
+      setFetchCount(next);
+    } catch (e) {
+      setError(e.message || String(e));
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [source, lastQuery, fetchCount, loadingMore]);
 
   const loadPgnText = useCallback((text) => {
     setError('');
@@ -186,6 +207,7 @@ export function ReviewerProvider({ children }) {
 
   const value = {
     engineStatus, source, games, lastQuery, busy, error, setError,
+    loadingMore, fetchCount, loadMoreGames,
     depth, setDepth, progress, batch, analysis, focusColor, setFocusColor,
     selectedPly, setSelectedPly, history, setHistory,
     boardThemeKey, changeBoardTheme, pieceSetKey, changePieceSet,

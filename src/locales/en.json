@@ -79,6 +79,8 @@
     "remove": "Remove",
     "gamesLoaded": "{{count}} games loaded for",
     "analyzeAll": "Analyze all → find my weaknesses",
+    "loadMore": "Load more games",
+    "loadingMore": "Loading…",
     "engineDepth": "Engine depth",
     "depthFast": "Fast",
     "depthBalanced": "Balanced",

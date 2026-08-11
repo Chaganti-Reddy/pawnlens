@@ -12,7 +12,7 @@ const SOURCE_LABEL = { chesscom: 'chess.com', lichess: 'lichess' };
 
 export default function Home() {
   const { t } = useTranslation();
-  const { fetchGames, loadPgnText, games, lastQuery, busy, error, runAnalysis, runBatch, depth, setDepth, source } = useReviewer();
+  const { fetchGames, loadPgnText, games, lastQuery, busy, error, runAnalysis, runBatch, depth, setDepth, source, loadMoreGames, loadingMore, fetchCount } = useReviewer();
   const [tab, setTab] = useState('chesscom');
   const [username, setUsername] = useState('');
   const [pgnText, setPgnText] = useState('');
@@ -127,6 +127,11 @@ export default function Home() {
           <div className="picker">
             {filtered.map((g, i) => <GameCard key={i} game={g} focusName={lastQuery} onReview={() => runAnalysis(g)} />)}
           </div>
+          {source !== 'pgn' && games.length >= fetchCount && (
+            <button className="load-more" onClick={loadMoreGames} disabled={loadingMore}>
+              {loadingMore ? t('home.loadingMore') : t('home.loadMore')}
+            </button>
+          )}
         </>
       )}
 
