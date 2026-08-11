@@ -384,8 +384,8 @@
 .engine-dot.loading { color: #e6c14b; background: #e6c14b; }
 .engine-dot.ready { color: var(--accent); background: var(--accent); }
 @keyframes dotGlow {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 70%, transparent); }
-  50% { box-shadow: 0 0 6px 3px color-mix(in srgb, currentColor 55%, transparent); }
+  0%, 100% { box-shadow: 0 0 2px 0 color-mix(in srgb, currentColor 60%, transparent); }
+  50% { box-shadow: 0 0 4px 1px color-mix(in srgb, currentColor 45%, transparent); }
 }
 
 /* tabs with icons */
