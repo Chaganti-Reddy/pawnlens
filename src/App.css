@@ -381,8 +381,8 @@
 .brand-name { font-size: 20px; font-weight: 700; }
 .topnav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 .engine-dot { width: 9px; height: 9px; border-radius: 50%; margin-left: 8px; flex: 0 0 auto; animation: dotGlow 2s ease-in-out infinite; }
-.engine-dot.loading { color: #e6c14b; background: #e6c14b; }
-.engine-dot.ready { color: var(--accent); background: var(--accent); }
+.engine-dot.is-warming { color: #e6c14b; background: #e6c14b; }
+.engine-dot.is-ready { color: var(--accent); background: var(--accent); }
 @keyframes dotGlow {
   0%, 100% { box-shadow: 0 0 2px 0 color-mix(in srgb, currentColor 60%, transparent); }
   50% { box-shadow: 0 0 4px 1px color-mix(in srgb, currentColor 45%, transparent); }

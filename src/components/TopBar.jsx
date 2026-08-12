@@ -22,7 +22,7 @@ export default function TopBar() {
         <NavLink to="/endgames" className={cls}>{t('nav.endgames')}</NavLink>
         <NavLink to="/openings" className={cls}>{t('nav.openings')}</NavLink>
         <NavLink to="/weaknesses" className={cls}>{t('nav.weaknesses')}</NavLink>
-        <span className={`engine-dot ${engineStatus}`} title={engineStatus === 'ready' ? t('nav.engineReady') : t('nav.engineLoading')} />
+        <span className={`engine-dot ${engineStatus === 'ready' ? 'is-ready' : 'is-warming'}`} title={engineStatus === 'ready' ? t('nav.engineReady') : t('nav.engineLoading')} />
         <SettingsMenu />
       </nav>
     </header>
